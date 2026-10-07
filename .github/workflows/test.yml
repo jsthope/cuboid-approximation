@@ -1,0 +1,34 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: '3.12'
+          - os: windows-latest
+            python: '3.10'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -c requirements-lock.txt . build ruff
+      - run: python -m ruff check src tests tools
+      - run: python -m unittest discover -s tests -v
+      - run: python -m build
+
+      - if: runner.os == 'Linux'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - if: runner.os == 'Linux'
+        run: |
+          python -m pip install '.[validation]'
+          python -m playwright install --with-deps chromium
+          npm install --no-save gltf-validator@2.0.0-dev.3.10
+          python tools/benchmark.py --strict --ablation --case cube --case rotated_cube --output outputs/ci-quality --resolution 32
+          python tools/validate_exports.py --run outputs/ci-quality/cube-regions
+          python tools/validate_exports.py --run outputs/ci-quality/rotated_cube-regions
