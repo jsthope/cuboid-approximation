@@ -1,0 +1,110 @@
+{
+  "scope": "Correct the right-ear reverse-skin projection on thin cuboid slabs; preserve geometry and retain unsupported nearest-color fallback when owned observations are missing",
+  "source": {
+    "path": "examples/ComfyUI_00013/input.ply",
+    "sha256": "5e2b58d47f57eb029568077e8629059210db78575844fa1c7905a021690fe981"
+  },
+  "baseline": {
+    "commit": "a80ae2b",
+    "atlas_sha256": "90d117228e42e56cb33c922c2ad45cd472c37bd559cf8f8da58a446571e55127"
+  },
+  "reference": {
+    "cuboids": 13,
+    "atlas_size": [
+      2048,
+      2048
+    ],
+    "ear_box": 5,
+    "front_side": 1,
+    "changed_chart_box_sides": [
+      [
+        5,
+        0
+      ],
+      [
+        5,
+        1
+      ]
+    ],
+    "other_76_chart_colors_identical": true,
+    "geometry_and_uv_arrays_identical": true,
+    "parameters_sha256": "e1d8cf2bdab53193fd2bf8144bb3df0d28cc2709935649c6afb2c26acb559fa2",
+    "atlas_sha256": "1de155a10fd86cb062d4422aa496139928e9fa3456093b63e4ad20d95eddc818"
+  },
+  "source_color_comparison": {
+    "source_samples": 3535,
+    "method": "Right-ear ROI u=(0.02,0.24), v=(0.025,0.30); 0.015-unit UV cells, largest source-depth gap > max(0.005,2.5*median spacing), at least three points on each skin; compare atlas with RGB of the outer skin. No color threshold selects points.",
+    "before": {
+      "mean_absolute_rgb_error": 0.16868306820604928,
+      "p95_mean_rgb_error": 0.26265555737065327
+    },
+    "after": {
+      "mean_absolute_rgb_error": 0.010084485312167907,
+      "p95_mean_rgb_error": 0.030322836318047188
+    }
+  },
+  "comparison_limit": "A diagnostic on sampled outer-skin source colors in the right-ear ROI; not a camera-ground-truth or whole-model color-accuracy guarantee",
+  "support": {
+    "reference_before": 0.8581806048634419,
+    "reference_after": 0.8447835876125874,
+    "current_after": 0.7046852773037332,
+    "note": "Thin-slab support now excludes samples assigned to other cuboids. Missing owned observations retain previous local colors only as unsupported fallback; support percentages differ from the earlier eligibility policy."
+  },
+  "current_geometry": {
+    "cuboids": 16,
+    "parameters_copied_byte_for_byte": true,
+    "cli_exit_code": 3,
+    "status": "Existing partial geometry remains partial; only textures rebaked"
+  },
+  "validation": {
+    "python": "3.14.4",
+    "python_tests": 185,
+    "passed": true,
+    "lint_passed": true,
+    "wheel_and_sdist_built": true,
+    "strict_corpus": [
+      {
+        "case": "cube",
+        "passed": true,
+        "failures": []
+      },
+      {
+        "case": "rotated_cube",
+        "passed": true,
+        "failures": []
+      },
+      {
+        "case": "close_layers",
+        "passed": true,
+        "failures": []
+      }
+    ],
+    "glb": [
+      {
+        "run": "outputs/ear-complete-reference",
+        "errors": 0,
+        "warnings": 0
+      },
+      {
+        "run": "outputs/ear-complete-current",
+        "errors": 0,
+        "warnings": 0
+      }
+    ],
+    "viewer": "Chromium: all construction prefixes, all five modes, front/back/reset; no WebGL or JavaScript errors"
+  },
+  "hashes": {
+    "src/cuboid_approximation/texture.py": "336b1ef000a7401424f9c6ebb67d19af25dd21dd8ef00cbd0e6ec292e58e82c3",
+    "tests/test_texture_projection.py": "41a6f1ab3b140c7c2371709853ad2449847224ce930b3bcaefc14319f392e9f7",
+    "docs/images/pipeline.png": "7286c2764b2580515c7469f65d6f372de14fb407ea307b482aa03df1aacb3c6a",
+    "docs/images/ear-texture.png": "c2bf4f16f8510800bb3d95c05ca3e9a4454ec86a553bb60bda327c04cf3af7ae"
+  },
+  "commands": {
+    "tests": "PYTHONPATH=src python -m unittest discover -s tests",
+    "corpus": "PYTHONPATH=src python tools/benchmark.py --strict --case cube --case rotated_cube --case close_layers --output outputs/ear-complete-quality --resolution 32",
+    "reference": "bake_model(PLY, REFERENCE_PREPARATION, REFERENCE_CUBOIDS, 'outputs/ear-complete-reference/textured', atlas_size=2048), using the same cached load_cloud result as the previous edge-color validation",
+    "current_rebake": "PYTHONPATH=src python -m cuboid_approximation --ply examples/ComfyUI_00013/input.ply --rebake outputs/texture-edges-current --output outputs/ear-complete-current --atlas-size 2048",
+    "exports": "python tools/validate_exports.py --run outputs/ear-complete-reference; python tools/validate_exports.py --run outputs/ear-complete-current",
+    "illustration": "python tools/illustrate.py --run REFERENCE_RUN --texture-dir outputs/ear-complete-reference/textured --pipeline-only --output docs/images --caption 'Reference geometry / corrected front-facing texture'"
+  }
+}

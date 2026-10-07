@@ -392,7 +392,9 @@ def load_cloud(ply_path, preparation_dir, loaded=None, color_space="srgb"):
     )
 
 
-def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
+def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0,
+              *, donor_mask=None, outward=False, return_colored=False):
+    """Bake nearest layers, or a thin slab's outer skin with model-scoped donors."""
     points = cloud["points"]
     scales = np.asarray(cloud.get("spacing_per_point", cloud["spacing"]), dtype=float)
     scales = np.broadcast_to(scales, (len(points),))
@@ -424,6 +426,8 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
         + max(max_depth, backward_depth, 0.75 * largest_scale) ** 2
     )
     ids = np.array(cloud["tree"].query_ball_point(center, radius), dtype=int)
+    if donor_mask is not None:
+        ids = ids[np.asarray(donor_mask, dtype=bool)[ids]]
     delta = points[ids] - origin
     uv = np.column_stack((delta @ u, delta @ v))
     depth = delta @ normal
@@ -453,8 +457,9 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
     ids, uv, depth, alignment, confidence, local_scale, cov2, extents = [
         a[use] for a in (ids, uv, depth, alignment, confidence, local_scale, cov2, extents)
     ]
-    # Layer order is distance to the fitted face, not input/donor density.
-    order = np.lexsort((depth, np.abs(depth)))
+    # A fitted face can pass through a thin source object. In model-aware
+    # baking, see its outer skin first, rather than the nearest reverse side.
+    order = np.argsort(-depth, kind="stable") if outward else np.lexsort((depth, np.abs(depth)))
     ids, uv, depth, alignment, confidence, local_scale, cov2, extents = [
         a[order] for a in (ids, uv, depth, alignment, confidence, local_scale, cov2, extents)
     ]
@@ -578,7 +583,7 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
             layer_scale = np.minimum(local_scale[owner], local_scale[anchor])
             ambiguous = np.zeros(count, bool)
             uncertain = (separation > 0.75 * layer_scale) & (
-                np.abs(depth[owner]) - np.abs(depth[anchor]) < 0.25 * layer_scale
+                np.abs(np.abs(depth[owner]) - np.abs(depth[anchor])) < 0.25 * layer_scale
             )
             ambiguous[pixels[uncertain]] = True
             transmission = np.ones(count)
@@ -601,9 +606,13 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
                     for channel in range(3)
                 ])
                 alpha = np.zeros(count)
-                # Donors estimate a surface, not independent transparent
-                # sheets. Max opacity avoids density/duplicate-dependent alpha.
-                np.maximum.at(alpha, p, np.clip(cloud["opacity"][ids[o]], 0, 1))
+                # Max avoids density/duplicate-dependent alpha. For visible
+                # splat layers the footprint attenuates opacity as well as RGB
+                # weight: a Gaussian tail must not become an opaque disk.
+                opacity = cloud["opacity"][ids[o]]
+                if outward and not interpolate:
+                    opacity = w / np.maximum(alignment[o]**4 * confidence[o], 1e-30)
+                np.maximum.at(alpha, p, np.clip(opacity, 0, 1))
                 good = total > 1e-10
                 gain = transmission[good] * alpha[good]
                 composite[good] += gain[:, None] * color[good] / total[good, None]
@@ -633,11 +642,12 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
         if np.any(~colored) and np.any(~projectable):
             # Adjacent-plane seam colors are also unsupported and depthless.
             accumulate(interpolate=True, edge=True)
-    return (
+    result = (
         np.clip(linear_to_srgb(rgb), 0, 1).reshape(height, width, 3),
         supported.reshape(height, width),
         projected_depth,
     )
+    return (*result, colored.reshape(height, width)) if return_colored else result
 
 
 def face_uv(rect, size):
@@ -922,6 +932,13 @@ def bake_model(
     rects, density = pack_atlas(faces, atlas_size)
     print("Loading PLY colors and projection attributes...", flush=True)
     cloud = load_cloud(ply_path, preparation_dir, loaded=loaded, color_space=color_space)
+    from .geometry import box_surface_distance
+
+    # Scope thin-slab outward rays to this part: another nearby cuboid must not donate
+    # its front layer to this one. Share ties within local acquisition error.
+    nearest_box = np.full(len(cloud["points"]), np.inf)
+    for box in boxes:
+        nearest_box = np.minimum(nearest_box, box_surface_distance(cloud["points"], box))
     max_depth = 2.5 * float(params["surface_tolerance"])
     geometry_report_path = Path(cuboids_dir) / "cuboids_report.json"
     geometry_report = (
@@ -935,13 +952,32 @@ def bake_model(
     confidence = np.zeros_like(atlas)
     metadata = []
     pad = 4
+    donor_box = None
     for i, (face, rect) in enumerate(zip(faces, rects)):
         x, y, w, h = rect
+        box = boxes[face["box"]]
+        thickness = float(box["dimensions"] @ np.abs(box["rotation"].T @ face["normal"]))
+        # On broad faces of thin slabs, the fit may cross the reverse skin.
+        # Thick parts keep their local nearest-surface projection.
+        outward = bool(thickness <= 0.25 * min(face["width"], face["height"]))
+        if donor_box != face["box"]:
+            donor_box = face["box"]
+            donor_mask = box_surface_distance(cloud["points"], boxes[donor_box]) <= (
+                nearest_box + 0.75 * cloud["spacing_per_point"]
+            )
         if face["hidden"]:
             rgb = np.full((h, w, 3), 0.65)
             supported, depths = np.zeros((h, w), bool), np.full(h * w, np.nan)
         else:
-            rgb, supported, depths = bake_face(face, w, h, cloud, max_depth, backward_depth)
+            rgb, supported, depths, colored = bake_face(
+                face, w, h, cloud, max_depth, backward_depth,
+                donor_mask=donor_mask if outward else None, outward=outward, return_colored=True,
+            )
+            if outward and not colored.all():
+                # Preserve a bounded nearest-color estimate where this slab
+                # has no owned observations, without claiming projection support.
+                nearest_rgb, _, _ = bake_face(face, w, h, cloud, max_depth, backward_depth)
+                rgb[~colored] = nearest_rgb[~colored]
         visible = face_pixel_mask(face, polygons[i], w, h)
         visible_support = supported & visible
         tile = np.rint(np.clip(rgb, 0, 1) * 255).astype(np.uint8)
@@ -963,6 +999,7 @@ def bake_model(
                 area=sum(polygon_area(poly) for poly in polygons[i]),
                 unclipped_area=face["width"] * face["height"],
                 hidden_in_all_prefixes=face["hidden"],
+                outward_layer_order=outward,
                 projected_fraction=float(supported[visible].mean()) if visible.any() else 0.0,
                 median_projection_depth=float(np.nanmedian(depths[visible_support.ravel()]))
                 if visible_support.any() else None,
@@ -1000,10 +1037,9 @@ def bake_model(
         support_definition="Unambiguous local projection on retained render patches; excludes coplanar duplicates and faces proven hidden in every construction prefix",
         source_up=source_up,
         source_units_per_meter=units_per_meter,
-        method="Opacity-composited supported layers ordered by distance to the cuboid face"
-        + "; anisotropic Gaussian RGB splats weighted by opacity and normal alignment",
-        layer_opacity="Maximum donor opacity per layer; density-independent surface estimate, not a 3DGS camera renderer",
-        fallback="Depth-eligible tangent-distance-bounded RGB interpolation, then local adjacent-plane seam colors, then neutral gray; interpolated/seam colors and ambiguous layers remain orange",
+        method="Nearest supported layers for thick parts; outward-visible layers for broad faces of thin slabs, scoped to nearby cuboid ownership; anisotropic Gaussian RGB splats weighted by opacity and normal alignment",
+        layer_opacity="Maximum donor opacity per layer, attenuated by the Gaussian footprint for outward-visible slabs; density-independent surface estimate, not a 3DGS camera renderer",
+        fallback="Depth-eligible tangent-distance-bounded RGB interpolation and local adjacent-plane seam colors; slabs without owned observations retain nearest-surface colors as unsupported fallback; remaining gaps stay neutral gray",
         geometry="Original cuboid parameters unchanged. Only overlapping coplanar render patches are clipped, with the earliest cuboid owning each patch.",
         cuboid_parameters_sha256=original_hash,
         geometry_unchanged=True,

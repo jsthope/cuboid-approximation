@@ -1,12 +1,19 @@
 """Regression checks for complete splat footprints and compatible gap donors."""
 
+import json
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 from scipy.spatial import cKDTree
 from scipy.spatial.transform import Rotation
 
-from cuboid_approximation.texture import bake_face, linear_to_srgb
+from PIL import Image
+
+from cuboid_approximation.geometry import CORNER_SIGNS
+from cuboid_approximation.texture import bake_face, bake_model, linear_to_srgb
 
 
 def face():
@@ -328,6 +335,96 @@ class TextureProjectionTests(unittest.TestCase):
         np.testing.assert_allclose(rgb, np.broadcast_to([1, 0, 0], rgb.shape), atol=1e-12)
         self.assertTrue(supported.all())
         np.testing.assert_allclose(depth, 0.01)
+
+
+class TextureVisibilityTests(unittest.TestCase):
+    def test_outer_checkerboard_is_not_hidden_by_nearer_reverse_skin(self):
+        size = 17
+        x, y = np.meshgrid((np.arange(size) + 0.5) / size, (np.arange(size) + 0.5) / size)
+        pattern = (np.indices((size, size)).sum(0) % 2).ravel()
+        front = np.column_stack((x.ravel(), y.ravel(), np.full(x.size, 0.03)))
+        back = front.copy()
+        back[:, 2] = -0.005
+        front_colors = np.column_stack((pattern, 1 - pattern, np.zeros(x.size)))
+        source = cloud(np.vstack((front, back)), spacing=0.01,
+                       colors=np.vstack((front_colors, np.tile([0, 0, 1], (x.size, 1)))))
+        rgb, supported, depth = bake_face(face(), size, size, source, 0.1, 0.1, outward=True)
+        np.testing.assert_allclose(rgb, front_colors.reshape(size, size, 3)[::-1], atol=1e-12)
+        self.assertTrue(supported.all())
+        np.testing.assert_allclose(depth, 0.03)
+        reverse = face()
+        reverse.update(origin=np.array([1., 0, 0]), u=np.array([-1., 0, 0]),
+                       normal=np.array([0., 0, -1]))
+        rgb, supported, depth = bake_face(reverse, size, size, source, 0.1, 0.1, outward=True)
+        np.testing.assert_allclose(rgb, np.broadcast_to([0, 0, 1], rgb.shape), atol=1e-12)
+        self.assertTrue(supported.all())
+        np.testing.assert_allclose(depth, 0.005)
+
+    def test_gaussian_tail_does_not_occlude_the_local_surface(self):
+        for duplicates in (1, 130):
+            points = np.vstack((np.tile([0.645, 0.5, 0.04], (duplicates, 1)), [0.5, 0.5, 0.01]))
+            colors = np.vstack((np.zeros((duplicates, 3)), [1, 1, 1]))
+            for order in (np.arange(len(points)), np.arange(len(points))[::-1]):
+                source = cloud(points[order], spacing=0.001, colors=colors[order],
+                               covariance=np.eye(3) * 0.05**2)
+                rgb, supported, depth = bake_face(face(), 1, 1, source, 0.1, 0.1, outward=True)
+                tail_alpha = np.exp(-0.5 * 0.145**2 / (0.05**2 + (0.45 * 0.001)**2))
+                np.testing.assert_allclose(rgb, linear_to_srgb(1 - tail_alpha), atol=1e-12)
+                self.assertTrue(supported.all())
+                np.testing.assert_allclose(depth, 0.04)
+
+    def bake_slabs(self, neighbor, rotation, only_neighbor=False):
+        centers = np.array([[0., 0, 0]] + ([[0., 0, 0.08]] if neighbor else []))
+        dimensions = np.tile([1., 1, 0.02], (len(centers), 1))
+        points = np.array([[0., 0, 0.04], [0., 0, 0.005]] +
+                          ([[0., 0, 0.08]] if neighbor else []))
+        colors = np.array([[1., 0, 0], [0., 1, 0]] + ([[0., 0, 1]] if neighbor else []))
+        if only_neighbor:
+            points = np.array([[-0.1, 0, 0.08], [0, 0, 0.08], [0.1, 0, 0.08]])
+            colors = np.tile([0., 0, 1], (3, 1))
+        source = cloud(points @ rotation.T, spacing=0.001, colors=colors,
+                       covariance=np.eye(3) * 2**2)
+        source.update(normals=source["normals"] @ rotation.T,
+                      spacing_per_point=np.full(len(points), 0.001),
+                      color_source="vertex_rgb", anisotropic_splats=0, kernel_normals_recovered=0)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            np.savez(root / "parameters.npz", centers=centers @ rotation.T, dimensions=dimensions,
+                     rotations=np.tile(rotation, (len(centers), 1, 1)), surface_tolerance=0.04,
+                     corners=(centers[:, None] + CORNER_SIGNS[None] * dimensions[:, None] / 2) @ rotation.T)
+            np.savez(root / "common_geometry.npz", points=source["points"], colors=colors)
+            with patch("cuboid_approximation.texture.load_cloud", return_value=source):
+                out, report = bake_model(root / "unused.ply", root, root, root / "textured", 256)
+            atlas = np.asarray(Image.open(out / "texture_atlas.png"))
+            samples = {}
+            for detail in report["face_details"]:
+                x, y, w, h = detail["rect"]
+                samples[detail["box"], detail["side"]] = atlas[y + h // 2, x + w // 2].copy() / 255
+            self.assertTrue(report["geometry_unchanged"])
+            self.assertEqual(sum(f["outward_layer_order"] for f in report["face_details"]),
+                             2 * len(centers))
+            # Verify that the exported report describes the same projection policy.
+            self.assertEqual(json.loads((out / "texture_report.json").read_text())["face_details"],
+                             report["face_details"])
+        return samples, report
+
+    def test_model_bake_recovers_both_sides_of_a_displaced_thin_slab(self):
+        for rotation in (np.eye(3), Rotation.from_euler("xyz", [23, 51, -17], degrees=True).as_matrix()):
+            samples, _ = self.bake_slabs(False, rotation)
+            np.testing.assert_allclose(samples[1, 4], [0, 1, 0], atol=0.02)
+            np.testing.assert_allclose(samples[1, 5], [1, 0, 0], atol=0.02)
+
+    def test_model_bake_does_not_steal_a_neighbor_slabs_color(self):
+        for rotation in (np.eye(3), Rotation.from_euler("xyz", [23, 51, -17], degrees=True).as_matrix()):
+            samples, _ = self.bake_slabs(True, rotation)
+            np.testing.assert_allclose(samples[1, 5], [1, 0, 0], atol=0.02)
+            np.testing.assert_allclose(samples[2, 5], [0, 0, 1], atol=0.02)
+
+    def test_unobserved_slab_retains_nearest_color_as_unsupported_fallback(self):
+        samples, report = self.bake_slabs(True, np.eye(3), only_neighbor=True)
+        np.testing.assert_allclose(samples[1, 5], [0, 0, 1], atol=0.02)
+        self.assertEqual(report["face_details"][5]["projected_fraction"], 0)
+        self.assertIsNone(report["face_details"][5]["median_projection_depth"])
 
 
 if __name__ == "__main__":
