@@ -1,0 +1,43 @@
+{
+  "baseline_commit": "87ddbd74ec2a6e5d47355b7beec30dde2306d238",
+  "source": "examples/ComfyUI_00013/input.ply",
+  "reference_geometry": "13 cuboids from /tmp/cuboid-release-example",
+  "comparison": "docs/images/texture-edge-completion.png",
+  "method": "Fill only uncolored edge texels from original colors on the same or directly adjacent chart of the same cuboid. Unfold adjacent faces around their shared edge. Bound both target edge distance and surface donor distance by 2.5 * surface_tolerance. Never cascade filled colors or change projection support.",
+  "measurement": "Texel counts over retained visible render patches within the edge completion radius. Missing status comes from explicit color masks, including nearest-surface fallback for slabs, not from RGB thresholds. Original seeded charts were captured before completion and replayed to verify the final atlas.",
+  "edge_completion_radius": 0.07812806172296405,
+  "reference": {
+    "edge_texels": 2227278,
+    "missing_before": 134356,
+    "missing_after": 191,
+    "existing_texels_changed": 0,
+    "completed_texels": 134205,
+    "geometry_and_uv_unchanged": true,
+    "confidence_atlas_unchanged": true,
+    "atlas_sha256": "d3af7a967d03a36523ebe1d5a3b0bf808a8e92f76f53a490320d375100bf4d35"
+  },
+  "checks": {
+    "unit_tests": 190,
+    "strict_quality_cases": [
+      "cube",
+      "rotated_cube",
+      "close_layers"
+    ],
+    "reference_glb_errors": 0,
+    "reference_glb_warnings": 0,
+    "viewer": "Passed in Chromium on both reference and current geometry: all cuboid prefixes, five display modes, front/back/reset controls; no JavaScript or WebGL errors.",
+    "build": "Passed: source distribution and wheel.",
+    "current_glb_errors": 0,
+    "current_glb_warnings": 0
+  },
+  "limits": [
+    "191 uncolored edge texels remain beyond the bounded donor reach.",
+    "Completion estimates appearance; it does not add source evidence, improve geometric fitting, or guarantee agreement with a camera rendering.",
+    "Current 16-cuboid geometry remains a partial fit."
+  ],
+  "current": {
+    "geometry_and_uv_unchanged": true,
+    "confidence_atlas_unchanged": true,
+    "cuboids": 16
+  }
+}

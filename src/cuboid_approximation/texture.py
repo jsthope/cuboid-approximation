@@ -889,6 +889,78 @@ def export_viewer(out, params, faces, rects, size, report, common_path, source_u
     )
 
 
+def complete_chart_edges(faces, tiles, colored, radius):
+    """Extend observed colors over short surface paths, without adding support.
+
+    Adjacent charts are unfolded around their shared edge. Euclidean shortcuts
+    through a thin slab (and donations from other cuboids) are never allowed.
+    Every query uses the original masks, so completion cannot cascade.
+    """
+    completed = [np.zeros(mask.shape, dtype=bool) for mask in colored]
+    if radius <= 0:
+        return completed
+    coordinates, trees = [], []
+    for face, mask in zip(faces, colored):
+        h, w = mask.shape
+        y, x = np.nonzero(mask)
+        uv = np.column_stack(((x + 0.5) * face["width"] / w,
+                              (y + 0.5) * face["height"] / h))
+        coordinates.append(uv)
+        trees.append(cKDTree(uv) if len(uv) and not face.get("hidden", False) else None)
+    # Snapshot only measured/fallback colors, before any tile is edited.
+    seeds = [tile[mask].copy() for tile, mask in zip(tiles, colored)]
+    for i, (face, mask) in enumerate(zip(faces, colored)):
+        if face.get("hidden", False):
+            continue
+        h, w = mask.shape
+        y, x = np.nonzero(~mask)
+        uv = np.column_stack(((x + 0.5) * face["width"] / w,
+                              (y + 0.5) * face["height"] / h))
+        near_edge = np.minimum.reduce((uv[:, 0], face["width"] - uv[:, 0],
+                                       uv[:, 1], face["height"] - uv[:, 1])) <= radius
+        y, x, uv = y[near_edge], x[near_edge], uv[near_edge]
+        if not len(uv):
+            continue
+        best = np.full(len(uv), np.inf)
+        colors = np.zeros((len(uv), 3), dtype=tiles[i].dtype)
+        world = face["origin"] + uv[:, :1] * face["u"] + uv[:, 1:] * face["v"]
+        corners = face["origin"] + np.array([[0, 0], [1, 0], [1, 1], [0, 1]]) @ np.array(
+            [face["u"] * face["width"], face["v"] * face["height"]]
+        )
+        for j, other in enumerate(faces):
+            if other["box"] != face["box"] or trees[j] is None:
+                continue
+            if j == i:
+                query, tree = uv, trees[j]
+            else:
+                shared = np.flatnonzero(np.isin(face["indices"], other["indices"]))
+                if len(shared) != 2:
+                    continue
+                origin, end = corners[shared]
+                along = (end - origin) / np.linalg.norm(end - origin)
+                inward = np.cross(face["normal"], along)
+                if (corners.mean(0) - origin) @ inward < 0:
+                    inward = -inward
+                other_center = other["origin"] + (other["width"] * other["u"]
+                                                   + other["height"] * other["v"]) / 2
+                other_inward = np.cross(other["normal"], along)
+                if (other_center - origin) @ other_inward < 0:
+                    other_inward = -other_inward
+                source = (other["origin"] + coordinates[j][:, :1] * other["u"]
+                          + coordinates[j][:, 1:] * other["v"] - origin)
+                unfolded = np.column_stack((source @ along, -(source @ other_inward)))
+                tree = cKDTree(unfolded)
+                query = np.column_stack(((world - origin) @ along, (world - origin) @ inward))
+            distance, index = tree.query(query, distance_upper_bound=radius * (1 + 1e-12))
+            closer = distance < best
+            colors[closer] = seeds[j][index[closer]]
+            best[closer] = distance[closer]
+        filled = np.isfinite(best)
+        tiles[i][y[filled], x[filled]] = colors[filled]
+        completed[i][y[filled], x[filled]] = True
+    return completed
+
+
 def bake_model(
     ply_path,
     preparation_dir,
@@ -951,6 +1023,7 @@ def bake_model(
     atlas = np.zeros((atlas_size, atlas_size, 3), dtype=np.uint8)
     confidence = np.zeros_like(atlas)
     metadata = []
+    tiles, color_masks = [], []
     pad = 4
     donor_box = None
     for i, (face, rect) in enumerate(zip(faces, rects)):
@@ -968,6 +1041,7 @@ def bake_model(
         if face["hidden"]:
             rgb = np.full((h, w, 3), 0.65)
             supported, depths = np.zeros((h, w), bool), np.full(h * w, np.nan)
+            colored = np.zeros((h, w), bool)
         else:
             rgb, supported, depths, colored = bake_face(
                 face, w, h, cloud, max_depth, backward_depth,
@@ -976,17 +1050,19 @@ def bake_model(
             if outward and not colored.all():
                 # Preserve a bounded nearest-color estimate where this slab
                 # has no owned observations, without claiming projection support.
-                nearest_rgb, _, _ = bake_face(face, w, h, cloud, max_depth, backward_depth)
+                nearest_rgb, _, _, nearest_colored = bake_face(
+                    face, w, h, cloud, max_depth, backward_depth, return_colored=True,
+                )
                 rgb[~colored] = nearest_rgb[~colored]
+                colored |= nearest_colored
         visible = face_pixel_mask(face, polygons[i], w, h)
         visible_support = supported & visible
         tile = np.rint(np.clip(rgb, 0, 1) * 255).astype(np.uint8)
+        tiles.append(tile)
+        color_masks.append(colored)
         quality = np.where(
             supported[:, :, None], np.array([51, 188, 147]), np.array([240, 145, 62])
         ).astype(np.uint8)
-        atlas[y - pad : y + h + pad, x - pad : x + w + pad] = np.pad(
-            tile, ((pad, pad), (pad, pad), (0, 0)), mode="edge"
-        )
         confidence[y - pad : y + h + pad, x - pad : x + w + pad] = np.pad(
             quality, ((pad, pad), (pad, pad), (0, 0)), mode="edge"
         )
@@ -1007,6 +1083,16 @@ def bake_model(
         )
         if (i + 1) % 12 == 0:
             print(f"Baked {i + 1}/{len(faces)} faces", flush=True)
+    completion = complete_chart_edges(faces, tiles, color_masks, max_depth)
+    for i, (tile, rect) in enumerate(zip(tiles, rects)):
+        x, y, w, h = rect
+        atlas[y - pad : y + h + pad, x - pad : x + w + pad] = np.pad(
+            tile, ((pad, pad), (pad, pad), (0, 0)), mode="edge"
+        )
+        visible = face_pixel_mask(faces[i], polygons[i], w, h)
+        metadata[i]["edge_completed_fraction"] = float(completion[i][visible].mean()) if visible.any() else 0.0
+        missing = ~(color_masks[i] | completion[i])
+        metadata[i]["uncolored_fraction"] = float(missing[visible].mean()) if visible.any() else 0.0
     Image.fromarray(atlas).save(out / "texture_atlas.png")
     Image.fromarray(confidence).save(out / "projection_confidence.png")
     export_obj(out, params, faces, rects, atlas_size)
@@ -1039,7 +1125,8 @@ def bake_model(
         source_units_per_meter=units_per_meter,
         method="Nearest supported layers for thick parts; outward-visible layers for broad faces of thin slabs, scoped to nearby cuboid ownership; anisotropic Gaussian RGB splats weighted by opacity and normal alignment",
         layer_opacity="Maximum donor opacity per layer, attenuated by the Gaussian footprint for outward-visible slabs; density-independent surface estimate, not a 3DGS camera renderer",
-        fallback="Depth-eligible tangent-distance-bounded RGB interpolation and local adjacent-plane seam colors; slabs without owned observations retain nearest-surface colors as unsupported fallback; remaining gaps stay neutral gray",
+        fallback="Depth-eligible tangent-distance-bounded RGB interpolation and local adjacent-plane seam colors; slabs without owned observations retain nearest-surface colors as unsupported fallback; uncolored edges borrow original chart colors along bounded unfolded paths on the same cuboid; remaining gaps stay neutral gray",
+        edge_completion_radius=max_depth,
         geometry="Original cuboid parameters unchanged. Only overlapping coplanar render patches are clipped, with the earliest cuboid owning each patch.",
         cuboid_parameters_sha256=original_hash,
         geometry_unchanged=True,
