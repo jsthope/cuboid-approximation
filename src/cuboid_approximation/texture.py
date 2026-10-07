@@ -430,12 +430,11 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
     alignment = np.abs(cloud["normals"][ids] @ normal)
     confidence = cloud.get("normal_confidence")
     confidence = np.ones(len(ids)) if confidence is None else confidence[ids]
-    # These eligibility rules apply to both projection and interpolation. In
-    # particular, fallback must never resurrect a source rejected by depth.
+    # Every pass obeys depth, opacity and normal-confidence eligibility.
+    # Face-aligned donors project; adjacent-plane donors can only fill seams.
     use = (
         (depth >= -np.maximum(0.75 * scales[ids], backward_depth))
         & (depth <= max_depth)
-        & (alignment >= 0.55)
         & (cloud["opacity"][ids] > 0)
         & (confidence > 0)
     )
@@ -461,11 +460,14 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
     ]
     inv_cov = np.linalg.inv(cov2)
     source_weight = cloud["opacity"][ids] * alignment**4 * confidence
+    projectable = alignment >= 0.55
+    normal_coordinates = cloud["normals"][ids] @ np.column_stack((u, v, normal))
     rgb = np.full((height * width, 3), gray, dtype=np.float64)
+    colored = np.zeros(height * width, dtype=bool)
     supported = np.zeros(height * width, dtype=bool)
     projected_depth = np.full(height * width, np.nan, dtype=np.float32)
 
-    def contributions(tile, candidates, low, high, interpolate):
+    def contributions(tile, candidates, low, high, interpolate, edge):
         pixel_density = np.array([width / face["width"], height / face["height"]])
         spans = high - low + 1
         counts = np.prod(spans, axis=1)
@@ -480,7 +482,7 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
             owner = candidates[local]
             pixels = xy[:, 1] * width + xy[:, 0]
             if interpolate:
-                unobserved = ~np.isfinite(projected_depth[pixels])
+                unobserved = ~colored[pixels]
                 xy, owner = xy[unobserved], owner[unobserved]
             pixels = (xy[:, 1] - tile[1]) * (tile[2] - tile[0]) + xy[:, 0] - tile[0]
             target = np.column_stack(
@@ -489,11 +491,43 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
             )
             delta = target - uv[owner]
             if interpolate:
-                distance2 = np.sum(delta**2, axis=1) + depth[owner] ** 2
+                tangent_distance2 = np.sum(delta**2, axis=1)
+                distance2 = tangent_distance2 + depth[owner] ** 2
                 weight = source_weight[owner] / np.maximum(
                     distance2, (0.25 * local_scale[owner]) ** 2
                 )
-                keep = distance2 <= (4 * local_scale[owner]) ** 2
+                # Depth eligibility already bounds the normal fitting offset.
+                # It must not consume the donor's tangent sampling radius and
+                # disable gap filling on an otherwise eligible offset surface.
+                keep = tangent_distance2 <= (4 * local_scale[owner]) ** 2
+                if edge:
+                    # An orthogonal source plane may color the adjoining rim,
+                    # but only if it actually meets that geometric edge. Test
+                    # its plane at the closest point on each edge, then keep
+                    # both the target and donor within the local 3D radius.
+                    normals = normal_coordinates[owner]
+                    residual = (
+                        np.sum(delta * normals[:, :2], axis=1)
+                        - depth[owner] * normals[:, 2]
+                    )
+                    edge_weight = np.zeros(len(owner))
+                    for axis, extent in enumerate((face["width"], face["height"])):
+                        adjacent_alignment = np.abs(normals[:, axis])
+                        for boundary in (0.0, extent):
+                            offset = boundary - target[:, axis]
+                            near = np.abs(offset) <= 4 * local_scale[owner]
+                            near &= adjacent_alignment >= 0.55
+                            near &= np.abs(residual + offset * normals[:, axis]) <= (
+                                0.75 * local_scale[owner]
+                            )
+                            edge_weight = np.maximum(
+                                edge_weight, np.where(near, adjacent_alignment**4, 0)
+                            )
+                    keep &= distance2 <= (4 * local_scale[owner]) ** 2
+                    weight = (
+                        cloud["opacity"][ids[owner]] * confidence[owner] * edge_weight
+                        / np.maximum(distance2, (0.25 * local_scale[owner]) ** 2)
+                    )
             else:
                 mahal = np.einsum("ni,nij,nj->n", delta, inv_cov[owner], delta)
                 weight = np.exp(-0.5 * np.minimum(mahal, 150)) * source_weight[owner]
@@ -501,7 +535,7 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
             keep &= weight > 1e-10
             yield pixels[keep], owner[keep], weight[keep]
 
-    def accumulate(interpolate=False):
+    def accumulate(interpolate=False, edge=False):
         density = np.array([width / face["width"], height / face["height"]])
         centers = np.column_stack((uv[:, 0], face["height"] - uv[:, 1])) * density - 0.5
         radius = (4 * local_scale[:, None] if interpolate else extents) * density
@@ -510,13 +544,11 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
         # Gather complete contributor sets per tile, never a fixed nearest-k
         # quota. Subdivide until <=65,536 candidate pairs fit; a single texel
         # may retain O(source count) donors, evaluated in bounded chunks.
-        pending = [((0, 0, width, height), np.arange(len(ids)))]
+        pending = [((0, 0, width, height), np.flatnonzero(~projectable if edge else projectable))]
         while pending:
             tile, candidates = pending.pop()
             x0, y0, x1, y1 = tile
-            if interpolate and np.isfinite(
-                projected_depth.reshape(height, width)[y0:y1, x0:x1]
-            ).all():
+            if interpolate and colored.reshape(height, width)[y0:y1, x0:x1].all():
                 continue
             lo = np.maximum(low[candidates], [x0, y0])
             hi = np.minimum(high[candidates], [x1 - 1, y1 - 1])
@@ -534,7 +566,7 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
                     children = [(x0, y0, x1, middle), (x0, middle, x1, y1)]
                 pending.extend((child, candidates) for child in children)
                 continue
-            batches = list(contributions(tile, candidates, lo, hi, interpolate))
+            batches = list(contributions(tile, candidates, lo, hi, interpolate, edge))
             pixels, owner, weight = [np.concatenate(a) for a in zip(*batches)]
             if not len(pixels):
                 continue
@@ -588,15 +620,19 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
             # Condition on observed material; don't darken a lone translucent
             # donor against an invented black background.
             rgb[target[good]] = composite[good] / (1 - transmission[good, None])
+            colored[target[good]] = True
             if not interpolate:
                 projected_depth[target] = primary_depth
                 supported[target] = good & ~ambiguous
 
     if len(ids):
         accumulate()
-        if np.any(~np.isfinite(projected_depth)):
+        if np.any(~colored):
             # Gap interpolation remains explicitly unsupported and depthless.
             accumulate(interpolate=True)
+        if np.any(~colored) and np.any(~projectable):
+            # Adjacent-plane seam colors are also unsupported and depthless.
+            accumulate(interpolate=True, edge=True)
     return (
         np.clip(linear_to_srgb(rgb), 0, 1).reshape(height, width, 3),
         supported.reshape(height, width),
@@ -967,7 +1003,7 @@ def bake_model(
         method="Opacity-composited supported layers ordered by distance to the cuboid face"
         + "; anisotropic Gaussian RGB splats weighted by opacity and normal alignment",
         layer_opacity="Maximum donor opacity per layer; density-independent surface estimate, not a 3DGS camera renderer",
-        fallback="Distance-bounded local RGB interpolation, then neutral gray; orange also marks ambiguous layers",
+        fallback="Depth-eligible tangent-distance-bounded RGB interpolation, then local adjacent-plane seam colors, then neutral gray; interpolated/seam colors and ambiguous layers remain orange",
         geometry="Original cuboid parameters unchanged. Only overlapping coplanar render patches are clipped, with the earliest cuboid owning each patch.",
         cuboid_parameters_sha256=original_hash,
         geometry_unchanged=True,

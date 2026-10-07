@@ -1,0 +1,137 @@
+{
+  "scope": "Texture gap interpolation and adjacent-plane edge colors; unchanged cuboid geometry and strict projection support",
+  "source": {
+    "path": "examples/ComfyUI_00013/input.ply",
+    "sha256": "5e2b58d47f57eb029568077e8629059210db78575844fa1c7905a021690fe981"
+  },
+  "reference": {
+    "cuboids": 13,
+    "atlas_size": [
+      2048,
+      2048
+    ],
+    "retained_points": 256167,
+    "geometry_archive": "examples/validation/after-geometry.npz",
+    "parameters_sha256": "e1d8cf2bdab53193fd2bf8144bb3df0d28cc2709935649c6afb2c26acb559fa2",
+    "same_cloud_for_both_bakes": true,
+    "geometry_and_uv_arrays_identical": true,
+    "confidence_atlases_identical": true,
+    "supported_area_fraction": [
+      0.8581806048634419,
+      0.8581806048634419
+    ]
+  },
+  "neutral_measurement": {
+    "definition": "Exact RGB (166,166,166) within retained face texel-center masks; excludes hidden faces and clipped-away coplanar patches; borders are the outer four chart pixels",
+    "limitation": "Neutral-gray proxy, not a color-accuracy measurement; actual source colors can also quantize to RGB166",
+    "before": {
+      "rendered_texels": 2995990,
+      "neutral_rgb166_texels": 283834,
+      "border_texels": 240888,
+      "neutral_rgb166_border_texels": 51713,
+      "neutral_fraction": 0.09473796641510819,
+      "border_neutral_fraction": 0.21467653017169805,
+      "ear_broad_faces": [
+        {
+          "box": 5,
+          "side": 0,
+          "rendered_texels": 158935,
+          "neutral_rgb166_texels": 6543,
+          "neutral_fraction": 0.04116777298895775
+        },
+        {
+          "box": 5,
+          "side": 1,
+          "rendered_texels": 158935,
+          "neutral_rgb166_texels": 7038,
+          "neutral_fraction": 0.04428225375153365
+        }
+      ]
+    },
+    "after": {
+      "rendered_texels": 2995990,
+      "neutral_rgb166_texels": 187662,
+      "border_texels": 240888,
+      "neutral_rgb166_border_texels": 27850,
+      "neutral_fraction": 0.06263772576009934,
+      "border_neutral_fraction": 0.11561389525422602,
+      "ear_broad_faces": [
+        {
+          "box": 5,
+          "side": 0,
+          "rendered_texels": 158935,
+          "neutral_rgb166_texels": 2443,
+          "neutral_fraction": 0.015371063642369523
+        },
+        {
+          "box": 5,
+          "side": 1,
+          "rendered_texels": 158935,
+          "neutral_rgb166_texels": 1478,
+          "neutral_fraction": 0.009299399125428634
+        }
+      ]
+    },
+    "neutral_texels_removed": 96172,
+    "relative_border_reduction": 0.46145069905052893
+  },
+  "current_geometry": {
+    "cuboids": 16,
+    "parameters_copied_byte_for_byte": true,
+    "cli_exit_code": 3,
+    "status": "Existing partial fit remains partial; texture rebake only"
+  },
+  "validation": {
+    "python_tests": 180,
+    "passed": true,
+    "lint_passed": true,
+    "wheel_and_sdist_built": true,
+    "strict_cases": [
+      "cube",
+      "rotated_cube",
+      "close_layers"
+    ],
+    "strict_cases_passed": 3,
+    "glb": [
+      {
+        "model": "outputs/texture-edges-after",
+        "errors": 0,
+        "warnings": 0
+      },
+      {
+        "model": "outputs/texture-edges-current",
+        "errors": 0,
+        "warnings": 0
+      }
+    ],
+    "viewer": "Chromium: initial zero, every construction prefix, all five modes, front/back/reset; no WebGL or JavaScript errors; reference front/back inspected"
+  },
+  "environment": {
+    "python": "3.14.4",
+    "dependencies": {
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "Pillow": "12.3.0",
+      "plyfile": "1.1.5"
+    }
+  },
+  "implementation_sha256": {
+    "baseline_texture.py": "d811e4b0a181f418c723c61f291e02d4ef72e2321c97f3b823833fe7fc473fea",
+    "src/cuboid_approximation/texture.py": "6eac0291bfda5b7e05552faa04cc2d587d7a86932f5db0f1af1bcc16e2f6ff69"
+  },
+  "illustration": {
+    "path": "docs/images/pipeline.png",
+    "sha256": "a57d173a81da3cc8c34cc6353ffd7d688e4177c5e66d09960966cbd04bce52b8",
+    "renderer": "tools/illustrate.py; actual atlas and unchanged reference cuboids"
+  },
+  "commands": {
+    "tests": "PYTHONPATH=src python -m unittest discover -s tests",
+    "lint": "python -m ruff check src tests tools",
+    "build": "python -m build",
+    "strict_corpus": "PYTHONPATH=src python tools/benchmark.py --strict --case cube --case rotated_cube --case close_layers --output outputs/texture-edges-quality --resolution 32",
+    "current_rebake": "PYTHONPATH=src python -m cuboid_approximation --ply examples/ComfyUI_00013/input.ply --rebake outputs/texture-fixed --output outputs/texture-edges-current --atlas-size 2048",
+    "reference_comparison": "bake_model on archived reference preparation/cuboids with the identical cached load_cloud result; baseline texture.py from commit 85ba593, then corrected texture.py; atlas_size=2048",
+    "illustration": "PYTHONPATH=src python tools/illustrate.py --run REFERENCE_RUN --texture-dir outputs/texture-edges-after/textured --pipeline-only --output docs/images --caption 'Reference geometry / corrected edge colors'",
+    "exports": "python tools/validate_exports.py --run outputs/texture-edges-after; python tools/validate_exports.py --run outputs/texture-edges-current"
+  }
+}

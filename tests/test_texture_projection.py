@@ -144,6 +144,127 @@ class TextureProjectionTests(unittest.TestCase):
             np.testing.assert_allclose(rgb, 0.65)
             self.assertFalse(supported.any())
 
+    def test_accepted_normal_offset_does_not_shrink_tangent_gap_radius(self):
+        rotation = Rotation.from_euler("xyz", [23, 51, -17], degrees=True).as_matrix()
+        for transform in (np.eye(3), rotation):
+            for offset in (0.0, -0.04, 0.04):
+                target = face()
+                target.update(width=0.1, height=0.05)
+                for key in ("u", "v", "normal"):
+                    target[key] = transform @ target[key]
+                source = cloud(np.array([[0.003, 0.025, offset]]) @ transform.T,
+                               spacing=0.006)
+                source["normals"] = source["normals"] @ transform.T
+                rgb, supported, depth = bake_face(target, 2, 1, source, 0.05, 0.05)
+                # A nearby gap at the left edge fills; the distant texel stays gray.
+                np.testing.assert_allclose(rgb[0], [[1, 0, 0], [0.65, 0.65, 0.65]],
+                                           atol=1e-12)
+                self.assertFalse(supported.any())
+                self.assertTrue(np.isnan(depth).all())
+
+    def test_offset_surface_fills_sampling_gaps_at_all_edges_and_corners(self):
+        x, y = np.meshgrid(np.linspace(0.025, 0.975, 20), np.linspace(0.025, 0.975, 20))
+        source = cloud(np.column_stack((x.ravel(), y.ravel(), np.full(x.size, 0.04))),
+                       spacing=0.01)
+        rgb, supported, depth = bake_face(face(), 40, 40, source, 0.05, 0.05)
+        np.testing.assert_allclose(rgb, np.broadcast_to([1, 0, 0], rgb.shape), atol=1e-12)
+        self.assertFalse(supported.all())
+        self.assertTrue(np.isnan(depth).any())
+
+    def test_adjacent_plane_colors_only_the_nearby_edge_after_rotation(self):
+        rotation = Rotation.from_euler("xyz", [23, 51, -17], degrees=True).as_matrix()
+        expected = None
+        for transform in (np.eye(3), rotation):
+            target = face()
+            for key in ("u", "v", "normal"):
+                target[key] = transform @ target[key]
+            source = cloud(np.array([[0, 0.5, 0.005]]) @ transform.T,
+                           spacing=0.001, local_spacing=[0.03])
+            source["normals"] = np.array([[1., 0, 0]]) @ transform.T
+            rgb, supported, depth = bake_face(target, 100, 1, source, 0.02, 0.02)
+            np.testing.assert_allclose(rgb[0, :12], np.tile([1, 0, 0], (12, 1)), atol=1e-12)
+            np.testing.assert_allclose(rgb[0, 12:], 0.65, atol=1e-12)
+            self.assertFalse(supported.any())
+            self.assertTrue(np.isnan(depth).all())
+            if expected is not None:
+                np.testing.assert_allclose(rgb, expected, atol=1e-12)
+            expected = rgb
+
+    def test_edge_fallback_rejects_planes_that_do_not_meet_the_edge(self):
+        source = cloud([[0.15, 0.5, 0.005]], spacing=0.04)
+        source["normals"] = np.array([[1., 0, 0]])
+        rgb, supported, depth = bake_face(face(), 100, 1, source, 0.02, 0.02)
+        np.testing.assert_allclose(rgb, 0.65)
+        self.assertFalse(supported.any())
+        self.assertTrue(np.isnan(depth).all())
+
+    def test_edge_fallback_preserves_depth_opacity_and_confidence_rejections(self):
+        for field, value in (
+            ("points", np.array([[0, 0.5, 0.03]])),
+            ("points", np.array([[0, 0.5, -0.03]])),
+            ("opacity", np.zeros(1)),
+            ("normal_confidence", np.zeros(1)),
+        ):
+            source = cloud([[0, 0.5, 0.005]], spacing=0.03)
+            source["normals"] = np.array([[1., 0, 0]])
+            source[field] = value
+            source["tree"] = cKDTree(source["points"])
+            rgb, supported, depth = bake_face(face(), 100, 1, source, 0.02, 0.02)
+            np.testing.assert_allclose(rgb, 0.65)
+            self.assertFalse(supported.any())
+            self.assertTrue(np.isnan(depth).all())
+
+    def test_edge_fallback_preserves_existing_projection_and_gap_colors(self):
+        source = cloud([[0.035, 0.5, 0.015], [0, 0.5, 0.005]], spacing=0.01,
+                       colors=[[0, 0, 1], [1, 0, 0]])
+        source["normals"][1] = [1, 0, 0]
+        rgb, supported, depth = bake_face(face(), 100, 1, source, 0.02, 0.02)
+        np.testing.assert_allclose(rgb[0, :7], np.tile([0, 0, 1], (7, 1)), atol=1e-12)
+        self.assertTrue(supported[0, 3])
+        self.assertFalse(supported[0, 0])
+        self.assertTrue(np.isnan(depth[0]))
+
+    def test_adjacent_plane_fallback_reaches_all_four_edges_and_corners(self):
+        for axis in (0, 1):
+            for boundary in (0., 1.):
+                point = np.array([0.5, 0.5, 0.005])
+                point[axis] = boundary
+                normal = np.zeros((1, 3))
+                normal[0, axis] = 1
+                source = cloud([point], spacing=0.03)
+                source["normals"] = normal
+                rgb, supported, depth = bake_face(face(), 20, 20, source, 0.02, 0.02)
+                row, column = (10, 0 if boundary == 0 else 19) if axis == 0 else (
+                    19 if boundary == 0 else 0, 10
+                )
+                np.testing.assert_allclose(rgb[row, column], [1, 0, 0], atol=1e-12)
+                np.testing.assert_allclose(rgb[10, 10], 0.65)
+                self.assertFalse(supported.any())
+                self.assertTrue(np.isnan(depth).all())
+        for x in (0., 1.):
+            for y in (0., 1.):
+                source = cloud([[x, y, 0.005]], spacing=0.03)
+                source["normals"] = np.array([[1., 0, 0]])
+                rgb, _, _ = bake_face(face(), 20, 20, source, 0.02, 0.02)
+                np.testing.assert_allclose(rgb[19 if y == 0 else 0, 0 if x == 0 else 19],
+                                           [1, 0, 0], atol=1e-12)
+
+    def test_edge_layers_preserve_opacity_order_and_duplicate_invariance(self):
+        for duplicates in (1, 130):
+            points = np.vstack(([[0, 0.5, 0.005]],
+                                np.tile([0, 0.5, 0.02], (duplicates, 1))))
+            colors = np.vstack(([1, 0, 0], np.tile([0, 0, 1], (duplicates, 1))))
+            opacity = np.r_[0.1, np.ones(duplicates)]
+            for order in (np.arange(len(points)), np.arange(len(points))[::-1]):
+                source = cloud(points[order], spacing=0.01, colors=colors[order])
+                source["opacity"] = opacity[order]
+                source["normals"] = np.tile([1., 0, 0], (len(points), 1))
+                rgb, supported, depth = bake_face(face(), 100, 1, source, 0.03, 0.03)
+                np.testing.assert_allclose(rgb[0, 0], linear_to_srgb([0.1, 0, 0.9]),
+                                           atol=1e-12)
+                self.assertFalse(supported.any())
+                self.assertTrue(np.isnan(depth).all())
+
     def test_local_spacing_controls_projection_and_fallback_ranges(self):
         for offset, projected in ((0.2, True), (0.65, False)):
             source = cloud([[0.5 - offset, 0.5, 0]], spacing=0.005, local_spacing=[0.2])
