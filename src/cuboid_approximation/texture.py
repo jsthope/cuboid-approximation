@@ -14,7 +14,7 @@ from PIL import Image
 from scipy.spatial import cKDTree
 from scipy.spatial.transform import Rotation
 
-from .geometry import BOX_QUADS as QUADS, CORNER_SIGNS as SIGNS
+from .geometry import BOX_QUADS as QUADS, CORNER_SIGNS as SIGNS, _split
 
 ROOT = Path(__file__).resolve().parent
 
@@ -55,6 +55,69 @@ def faces_from_corners(corners):
                 )
             )
     return faces
+
+
+def render_face_polygons(corners, faces):
+    """Give coincident exterior patches to the earliest cuboid in every prefix.
+
+    Only co-oriented, coplanar overlaps are clipped. Source cuboid parameters
+    and other faces stay intact, including faces visible in an earlier prefix.
+    """
+    edges = corners[:, [4, 2, 1]] - corners[:, :1]
+    dimensions = np.linalg.norm(edges, axis=2)
+    axes = edges / dimensions[:, :, None]
+    precision = np.spacing(np.max(np.abs(corners), axis=(1, 2))) * 4
+    bounds = [(box.min(0), box.max(0)) for box in corners]
+    result = []
+    for face in faces:
+        quad = corners[face["box"]][face["indices"]]
+        origin = quad[0]
+        polygon = quad - origin
+        face_epsilon = max(min(face["width"], face["height"]) * 1e-10,
+                           precision[face["box"]])
+        fragments = [polygon]
+        for box in range(face["box"]):
+            if not fragments:
+                break
+            epsilon = max(face_epsilon, precision[box])
+            if np.any(quad.max(0) < bounds[box][0] - epsilon) or np.any(
+                quad.min(0) > bounds[box][1] + epsilon
+            ):
+                continue
+            # Center locally before adding half-edges; a distant or much larger
+            # future box must not change a frozen prefix's clipping precision.
+            center = (corners[box, 0] - origin) + edges[box].sum(axis=0) / 2
+            same_face = any(
+                face["normal"] @ (sign * axes[box, axis]) > 1 - 1e-10
+                and np.max(np.abs(
+                    (polygon - center) @ (sign * axes[box, axis])
+                    - dimensions[box, axis] / 2
+                )) <= epsilon
+                for axis in range(3) for sign in (-1, 1)
+            )
+            if not same_face:
+                continue
+            remaining = []
+            for fragment in fragments:
+                inside = fragment
+                for axis in range(3):
+                    for sign in (-1, 1):
+                        if len(inside) < 3:
+                            break
+                        inside, outside = _split(
+                            inside, sign * axes[box, axis], center,
+                            dimensions[box, axis] / 2, epsilon,
+                        )
+                        if len(outside) >= 3:
+                            remaining.append(outside)
+            fragments = remaining
+        result.append([
+            quad.copy() if np.array_equal(poly, polygon)
+            else poly + origin for poly in fragments
+            if np.linalg.norm(np.sum(np.cross(poly - poly[0], np.roll(poly, -1, axis=0) - poly[0]), axis=0))
+            > face_epsilon**2
+        ])
+    return result
 
 
 def pack_atlas(faces, size=2048, pad=4):
@@ -250,16 +313,24 @@ def load_cloud(ply_path, preparation_dir, loaded=None, color_space="srgb"):
     opacity = loaded["opacity"]
     covariance = np.eye(3)[None] * (0.6 * local_spacing[:, None, None]) ** 2
     anisotropic = np.zeros(len(points), dtype=bool)
+    kernel_normals = np.zeros_like(points)
+    kernel_confidence = np.zeros(len(points))
     if loaded["splats"] is not None:
         logs = loaded["splats"]["log_scales"]
         quats = loaded["splats"]["quaternions_wxyz"]
         anisotropic = np.isfinite(logs).all(axis=1) & np.isfinite(quats).all(axis=1)
         quaternion_scale = np.max(np.abs(quats), axis=1)
         anisotropic &= quaternion_scale > 0
-        scales = np.exp(np.clip(
-            logs[anisotropic],
+        # Preserve measured ellipsoids, rather than clipping their long axes to
+        # nearest-center spacing. Only implausibly scene-sized kernels use the
+        # acquisition-scale cap; malformed large scales must remain bounded.
+        scene_extent = float(np.ptp(points, axis=0).max())
+        plausible = np.max(logs[anisotropic], axis=1) <= np.log(max(scene_extent, spacing))
+        upper = np.where(plausible[:, None], logs[anisotropic],
+                         np.log(2 * local_spacing[anisotropic, None]))
+        scales = np.exp(np.maximum(
+            np.minimum(logs[anisotropic], upper),
             np.log(0.35 * local_spacing[anisotropic, None]),
-            np.log(2 * local_spacing[anisotropic, None]),
         ))
         rotations = (
             Rotation.from_quat(
@@ -269,6 +340,13 @@ def load_cloud(ply_path, preparation_dir, loaded=None, color_space="srgb"):
             else np.empty((0, 3, 3))
         )
         covariance[anisotropic] = np.einsum("nik,nk,njk->nij", rotations, scales**2, rotations)
+        order = np.argsort(logs[anisotropic], axis=1)
+        ordered = np.take_along_axis(logs[anisotropic], order, axis=1)
+        flatness = ordered[:, 0] - ordered[:, 1]
+        planar = plausible & (flatness <= np.log(0.5))
+        target = np.flatnonzero(anisotropic)[planar]
+        kernel_normals[target] = rotations[planar, :, order[planar, 0]]
+        kernel_confidence[target] = 1 - np.exp(2 * flatness[planar])
     with np.load(Path(preparation_dir) / "common_geometry.npz") as common:
         normals, normal_confidence = transfer_normals(
             points,
@@ -280,6 +358,9 @@ def load_cloud(ply_path, preparation_dir, loaded=None, color_space="srgb"):
             spacing_per_point=local_spacing,
             sample_spacing_per_point=common.get("spacing_per_point"),
         )
+    unresolved = (normal_confidence == 0) & (kernel_confidence > 0)
+    normals[unresolved] = kernel_normals[unresolved]
+    normal_confidence[unresolved] = kernel_confidence[unresolved]
     tree = cKDTree(points)
     if not anisotropic.all():
         distinct_indices = loaded.get("distinct_indices")
@@ -307,6 +388,7 @@ def load_cloud(ply_path, preparation_dir, loaded=None, color_space="srgb"):
         spacing_per_point=local_spacing,
         color_source=loaded["color_source"],
         anisotropic_splats=int(anisotropic.sum()),
+        kernel_normals_recovered=int(unresolved.sum()),
     )
 
 
@@ -372,8 +454,7 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
     ids, uv, depth, alignment, confidence, local_scale, cov2, extents = [
         a[use] for a in (ids, uv, depth, alignment, confidence, local_scale, cov2, extents)
     ]
-    # Visit nearer layers first so an accepted texel anchor can never be
-    # displaced by a later source. This makes layer selection a single pass.
+    # Layer order is distance to the fitted face, not input/donor density.
     order = np.lexsort((depth, np.abs(depth)))
     ids, uv, depth, alignment, confidence, local_scale, cov2, extents = [
         a[order] for a in (ids, uv, depth, alignment, confidence, local_scale, cov2, extents)
@@ -384,102 +465,132 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0):
     supported = np.zeros(height * width, dtype=bool)
     projected_depth = np.full(height * width, np.nan, dtype=np.float32)
 
-    # Rasterize every compatible footprint, including interpolation donors.
-    # Fixed neighbor quotas can hide a sparse near layer behind a dense far one.
-    # At most 65,536 source/texel pairs are materialized at once, even for a
-    # footprint that covers the entire atlas.
-    def contributions(interpolate=False):
+    def contributions(tile, candidates, low, high, interpolate):
         pixel_density = np.array([width / face["width"], height / face["height"]])
-        if interpolate:
-            # Skip donors whose entire pixel rectangle was already projected.
-            # The summed-area table avoids rasterizing large covered regions
-            # just to fill a few isolated holes.
-            missing = np.zeros((height + 1, width + 1), dtype=np.uint32)
-            missing[1:, 1:] = ~np.isfinite(projected_depth.reshape(height, width))
-            np.cumsum(missing, axis=0, out=missing)
-            np.cumsum(missing, axis=1, out=missing)
-        for start in range(0, len(ids), 128):
-            stop = min(start + 128, len(ids))
-            pixel_center = np.column_stack(
-                (
-                    uv[start:stop, 0] * pixel_density[0] - 0.5,
-                    (face["height"] - uv[start:stop, 1]) * pixel_density[1] - 0.5,
-                )
+        spans = high - low + 1
+        counts = np.prod(spans, axis=1)
+        ends = np.cumsum(counts)
+        for begin in range(0, int(ends[-1]), 65536):
+            flat = np.arange(begin, min(begin + 65536, int(ends[-1])))
+            local = np.searchsorted(ends, flat, side="right")
+            offset = flat - (ends - counts)[local]
+            xy = low[local] + np.column_stack(
+                (offset // spans[local, 1], offset % spans[local, 1])
             )
-            radius = (
-                4 * local_scale[start:stop, None] if interpolate else extents[start:stop]
-            ) * pixel_density
-            # Clip before integer conversion; large physical kernels must not
-            # overflow the pixel bounds or allocate a complete source grid.
-            low = np.ceil(np.clip(pixel_center - radius, 0, [width, height])).astype(int)
-            high = np.floor(np.clip(pixel_center + radius, -1, [width - 1, height - 1])).astype(int)
-            spans = np.maximum(high - low + 1, 0)
-            counts = np.prod(spans, axis=1)
+            owner = candidates[local]
+            pixels = xy[:, 1] * width + xy[:, 0]
             if interpolate:
-                x0, y0 = low.T
-                x1, y1 = (low + spans).T
-                holes = missing[y1, x1] + missing[y0, x0] - missing[y1, x0] - missing[y0, x1]
-                counts[holes == 0] = 0
-            ends = np.cumsum(counts)
-            for begin in range(0, int(ends[-1]), 65536):
-                flat = np.arange(begin, min(begin + 65536, int(ends[-1])))
-                local = np.searchsorted(ends, flat, side="right")
-                offset = flat - (ends - counts)[local]
-                xy = low[local] + np.column_stack(
-                    (offset // spans[local, 1], offset % spans[local, 1])
+                unobserved = ~np.isfinite(projected_depth[pixels])
+                xy, owner = xy[unobserved], owner[unobserved]
+            pixels = (xy[:, 1] - tile[1]) * (tile[2] - tile[0]) + xy[:, 0] - tile[0]
+            target = np.column_stack(
+                ((xy[:, 0] + 0.5) / pixel_density[0],
+                 face["height"] - (xy[:, 1] + 0.5) / pixel_density[1])
+            )
+            delta = target - uv[owner]
+            if interpolate:
+                distance2 = np.sum(delta**2, axis=1) + depth[owner] ** 2
+                weight = source_weight[owner] / np.maximum(
+                    distance2, (0.25 * local_scale[owner]) ** 2
                 )
-                owner = start + local
-                pixels = xy[:, 1] * width + xy[:, 0]
-                if interpolate:
-                    unobserved = ~np.isfinite(projected_depth[pixels])
-                    pixels, xy, owner = pixels[unobserved], xy[unobserved], owner[unobserved]
-                target = np.column_stack(
-                    (
-                        (xy[:, 0] + 0.5) / pixel_density[0],
-                        face["height"] - (xy[:, 1] + 0.5) / pixel_density[1],
-                    )
-                )
-                delta = target - uv[owner]
-                if interpolate:
-                    distance2 = np.sum(delta**2, axis=1) + depth[owner] ** 2
-                    weight = source_weight[owner] / np.maximum(
-                        distance2, (0.25 * local_scale[owner]) ** 2
-                    )
-                    keep = distance2 <= (4 * local_scale[owner]) ** 2
-                else:
-                    mahal = np.einsum("ni,nij,nj->n", delta, inv_cov[owner], delta)
-                    weight = np.exp(-0.5 * np.minimum(mahal, 150)) * source_weight[owner]
-                    keep = mahal <= 9
-                keep &= weight > 1e-10
-                yield pixels[keep], owner[keep], weight[keep]
+                keep = distance2 <= (4 * local_scale[owner]) ** 2
+            else:
+                mahal = np.einsum("ni,nij,nj->n", delta, inv_cov[owner], delta)
+                weight = np.exp(-0.5 * np.minimum(mahal, 150)) * source_weight[owner]
+                keep = mahal <= 9
+            keep &= weight > 1e-10
+            yield pixels[keep], owner[keep], weight[keep]
 
     def accumulate(interpolate=False):
-        first = np.full(height * width, len(ids), dtype=int)
-        total = np.zeros(height * width)
-        color = np.zeros((height * width, 3))
-        depths = np.zeros(height * width)
-        ambiguous = np.zeros(height * width, bool)
-        for pixels, owner, weight in contributions(interpolate):
+        density = np.array([width / face["width"], height / face["height"]])
+        centers = np.column_stack((uv[:, 0], face["height"] - uv[:, 1])) * density - 0.5
+        radius = (4 * local_scale[:, None] if interpolate else extents) * density
+        low = np.ceil(np.clip(centers - radius, 0, [width, height])).astype(int)
+        high = np.floor(np.clip(centers + radius, -1, [width - 1, height - 1])).astype(int)
+        # Gather complete contributor sets per tile, never a fixed nearest-k
+        # quota. Subdivide until <=65,536 candidate pairs fit; a single texel
+        # may retain O(source count) donors, evaluated in bounded chunks.
+        pending = [((0, 0, width, height), np.arange(len(ids)))]
+        while pending:
+            tile, candidates = pending.pop()
+            x0, y0, x1, y1 = tile
+            if interpolate and np.isfinite(
+                projected_depth.reshape(height, width)[y0:y1, x0:x1]
+            ).all():
+                continue
+            lo = np.maximum(low[candidates], [x0, y0])
+            hi = np.minimum(high[candidates], [x1 - 1, y1 - 1])
+            overlap = np.all(hi >= lo, axis=1)
+            candidates, lo, hi = candidates[overlap], lo[overlap], hi[overlap]
+            if not len(candidates):
+                continue
+            pairs = np.prod(hi - lo + 1, axis=1).sum()
+            if pairs > 65536 and max(x1 - x0, y1 - y0) > 1:
+                if x1 - x0 >= y1 - y0:
+                    middle = (x0 + x1) // 2
+                    children = [(x0, y0, middle, y1), (middle, y0, x1, y1)]
+                else:
+                    middle = (y0 + y1) // 2
+                    children = [(x0, y0, x1, middle), (x0, middle, x1, y1)]
+                pending.extend((child, candidates) for child in children)
+                continue
+            batches = list(contributions(tile, candidates, lo, hi, interpolate))
+            pixels, owner, weight = [np.concatenate(a) for a in zip(*batches)]
+            if not len(pixels):
+                continue
+            count = (x1 - x0) * (y1 - y0)
+            first = np.full(count, len(ids), dtype=int)
             np.minimum.at(first, pixels, owner)
             anchor = first[pixels]
             separation = np.abs(depth[owner] - depth[anchor])
-            # The finer scale prevents a sparse donor from blending across a
-            # separate, densely sampled sheet (and works in either direction).
             layer_scale = np.minimum(local_scale[owner], local_scale[anchor])
+            ambiguous = np.zeros(count, bool)
             uncertain = (separation > 0.75 * layer_scale) & (
                 np.abs(depth[owner]) - np.abs(depth[anchor]) < 0.25 * layer_scale
             )
             ambiguous[pixels[uncertain]] = True
-            layer = separation <= 0.75 * layer_scale
-            pixels, owner, weight = pixels[layer], owner[layer], weight[layer]
-            np.add.at(total, pixels, weight)
-            np.add.at(color, pixels, weight[:, None] * colors[ids[owner]])
-            np.add.at(depths, pixels, weight * depth[owner])
-        good = total > 1e-10
-        rgb[good] = color[good] / total[good, None]
-        if not interpolate:
-            projected_depth[good] = depths[good] / total[good]
-            supported[:] = good & ~ambiguous
+            transmission = np.ones(count)
+            composite = np.zeros((count, 3))
+            primary_depth = np.full(count, np.nan)
+            remaining = np.ones(len(pixels), bool)
+            primary = True
+            while remaining.any():
+                p, o, w = pixels[remaining], owner[remaining], weight[remaining]
+                first.fill(len(ids))
+                np.minimum.at(first, p, o)
+                anchor = first[p]
+                layer = np.abs(depth[o] - depth[anchor]) <= 0.75 * np.minimum(
+                    local_scale[o], local_scale[anchor]
+                )
+                p, o, w = p[layer], o[layer], w[layer]
+                total = np.bincount(p, weights=w, minlength=count)
+                color = np.column_stack([
+                    np.bincount(p, weights=w * colors[ids[o], channel], minlength=count)
+                    for channel in range(3)
+                ])
+                alpha = np.zeros(count)
+                # Donors estimate a surface, not independent transparent
+                # sheets. Max opacity avoids density/duplicate-dependent alpha.
+                np.maximum.at(alpha, p, np.clip(cloud["opacity"][ids[o]], 0, 1))
+                good = total > 1e-10
+                gain = transmission[good] * alpha[good]
+                composite[good] += gain[:, None] * color[good] / total[good, None]
+                transmission[good] *= 1 - alpha[good]
+                if primary:
+                    primary_depth[good] = np.bincount(
+                        p, weights=w * depth[o], minlength=count
+                    )[good] / total[good]
+                    primary = False
+                remaining[np.flatnonzero(remaining)[layer]] = False
+                remaining &= transmission[pixels] > 1e-4
+            good = 1 - transmission > 1e-10
+            target = (np.arange(y0, y1)[:, None] * width + np.arange(x0, x1)).ravel()
+            # Condition on observed material; don't darken a lone translucent
+            # donor against an invented black background.
+            rgb[target[good]] = composite[good] / (1 - transmission[good, None])
+            if not interpolate:
+                projected_depth[target] = primary_depth
+                supported[target] = good & ~ambiguous
 
     if len(ids):
         accumulate()
@@ -498,29 +609,60 @@ def face_uv(rect, size):
     return np.array([[x, y + h], [x + w, y + h], [x + w, y], [x, y]], dtype=float) / size
 
 
+def polygon_uv(polygon, face, rect, size):
+    """Apply the original rectangular UV chart to a clipped face fragment."""
+    delta = polygon - face["origin"]
+    x, y, w, h = rect
+    return np.column_stack((
+        (x + (delta @ face["u"]) / face["width"] * w) / size,
+        (y + (1 - (delta @ face["v"]) / face["height"]) * h) / size,
+    ))
+
+
+def polygon_area(polygon):
+    delta = polygon - polygon[0]
+    return float(np.linalg.norm(np.sum(np.cross(delta, np.roll(delta, -1, axis=0)), axis=0)) / 2)
+
+
+def face_pixel_mask(face, polygons, width, height):
+    """Texel centers in the retained convex fragments (for support metrics)."""
+    x = (np.arange(width)[None] + 0.5) * face["width"] / width
+    y = face["height"] - (np.arange(height)[:, None] + 0.5) * face["height"] / height
+    mask = np.zeros((height, width), bool)
+    for polygon in polygons:
+        delta = polygon - face["origin"]
+        uv = np.column_stack((delta @ face["u"], delta @ face["v"]))
+        inside = np.ones_like(mask)
+        for a, b in zip(uv, np.roll(uv, -1, axis=0)):
+            edge = b - a
+            inside &= edge[0] * (y - a[1]) - edge[1] * (x - a[0]) >= (
+                -face["width"] * face["height"] * 1e-10
+            )
+        mask |= inside
+    return mask
+
+
 def export_obj(out, params, faces, rects, size):
     lines = [
         "# Cloned cuboids: original double-precision positions, projected UV texture",
         "mtllib cuboids_textured.mtl",
     ]
-    for point in params["corners"].reshape(-1, 3):
-        lines.append("v " + " ".join(format(float(x), ".17g") for x in point))
-    for rect in rects:
-        for u, v in face_uv(rect, size):
-            lines.append(f"vt {u:.17g} {1 - v:.17g}")
     for f in faces:
         lines.append("vn " + " ".join(format(float(x), ".17g") for x in f["normal"]))
     lines += ["usemtl projected_cloud", "s off"]
-    for i, f in enumerate(faces):
+    offset = 1
+    for i, (f, polygons) in enumerate(zip(faces, render_face_polygons(params["corners"], faces))):
         if i % 6 == 0:
             lines.append(f"o cuboid_{f['box'] + 1:02d}")
-        lines.append(
-            "f "
-            + " ".join(
-                f"{f['box'] * 8 + int(idx) + 1}/{i * 4 + j + 1}/{i + 1}"
-                for j, idx in enumerate(f["indices"])
-            )
-        )
+        for polygon in polygons:
+            for point in polygon:
+                lines.append("v " + " ".join(format(float(x), ".17g") for x in point))
+            for u, v in polygon_uv(polygon, f, rects[i], size):
+                lines.append(f"vt {u:.17g} {1 - v:.17g}")
+            lines.append("f " + " ".join(
+                f"{offset + j}/{offset + j}/{i + 1}" for j in range(len(polygon))
+            ))
+            offset += len(polygon)
     (out / "cuboids_textured.obj").write_text("\n".join(lines) + "\n", encoding="utf-8")
     (out / "cuboids_textured.mtl").write_text(
         "newmtl projected_cloud\nKa 1 1 1\nKd 1 1 1\nKs 0 0 0\nd 1\nillum 1\nmap_Kd texture_atlas.png\n",
@@ -554,42 +696,48 @@ def export_glb(out, params, faces, rects, size, source_up="-y", units_per_meter=
         return len(accessors) - 1
 
     source_origin = np.mean(params["centers"], axis=0)
+    polygons = render_face_polygons(params["corners"], faces)
     for box in range(len(params["centers"])):
-        positions, normals, uv = [], [], []
+        positions, normals, uv, indices = [], [], [], []
         for i in range(box * 6, box * 6 + 6):
-            local = SIGNS[faces[i]["indices"]]
-            n = np.cross(local[1] - local[0], local[3] - local[0])
+            quad = SIGNS[faces[i]["indices"]]
+            n = np.cross(quad[1] - quad[0], quad[3] - quad[0])
             n /= np.linalg.norm(n)
-            positions.extend(local)
-            normals.extend([n] * 4)
-            uv.extend(face_uv(rects[i], size))
-        indices = (
-            (np.arange(6)[:, None] * 4 + np.array([0, 1, 2, 0, 2, 3])[None])
-            .reshape(-1)
-            .astype("<u2")
-        )
-        pa = accessor(np.asarray(positions, dtype="<f4"), 5126, "VEC3", 34962, True)
-        na = accessor(np.asarray(normals, dtype="<f4"), 5126, "VEC3", 34962)
-        ta = accessor(np.asarray(uv, dtype="<f4"), 5126, "VEC2", 34962)
-        ia = accessor(indices, 5123, "SCALAR", 34963)
-        meshes.append(
-            dict(
+            for polygon in polygons[i]:
+                original = params["corners"][box][faces[i]["indices"]]
+                local = quad if np.array_equal(polygon, original) else (
+                    (polygon - params["centers"][box]) @ params["rotations"][box]
+                    / (params["dimensions"][box] / 2)
+                )
+                offset = len(positions)
+                indices.extend(
+                    offset + index
+                    for k in range(1, len(polygon) - 1) for index in (0, k, k + 1)
+                )
+                positions.extend(local)
+                normals.extend([n] * len(polygon))
+                uv.extend(polygon_uv(polygon, faces[i], rects[i], size))
+        mesh_index = None
+        if positions:
+            pa = accessor(np.asarray(positions, dtype="<f4"), 5126, "VEC3", 34962, True)
+            na = accessor(np.asarray(normals, dtype="<f4"), 5126, "VEC3", 34962)
+            ta = accessor(np.asarray(uv, dtype="<f4"), 5126, "VEC2", 34962)
+            small = len(positions) <= 65536
+            ia = accessor(np.asarray(indices, dtype="<u2" if small else "<u4"),
+                          5123 if small else 5125, "SCALAR", 34963)
+            mesh_index = len(meshes)
+            meshes.append(dict(
                 name=f"cuboid_{box + 1:02d}",
-                primitives=[
-                    dict(
-                        attributes=dict(POSITION=pa, NORMAL=na, TEXCOORD_0=ta),
-                        indices=ia,
-                        material=0,
-                    )
-                ],
-            )
-        )
+                primitives=[dict(attributes=dict(POSITION=pa, NORMAL=na, TEXCOORD_0=ta),
+                                 indices=ia, material=0)],
+            ))
         matrix = np.eye(4)
         matrix[:3, :3] = params["rotations"][box] @ np.diag(params["dimensions"][box] / 2)
         matrix[:3, 3] = params["centers"][box] - source_origin
-        nodes.append(
-            dict(name=f"cuboid_{box + 1:02d}", mesh=box, matrix=matrix.T.reshape(-1).tolist())
-        )
+        node = dict(name=f"cuboid_{box + 1:02d}", matrix=matrix.T.reshape(-1).tolist())
+        if mesh_index is not None:
+            node["mesh"] = mesh_index
+        nodes.append(node)
     image_view = buffer_view((out / "texture_atlas.png").read_bytes())
     root = np.eye(4)
     root[:3, :3] = up_rotation(source_up) / units_per_meter
@@ -630,7 +778,7 @@ def export_glb(out, params, faces, rects, size, source_up="-y", units_per_meter=
             source_origin=source_origin.tolist(),
             source_up=source_up,
             source_units_per_meter=units_per_meter,
-            geometry="Unit local corners and double-precision node transforms",
+            geometry="Local face fragments and double-precision node transforms; coplanar patches owned by the earliest box",
         ),
     )
     encoded = json.dumps(doc, separators=(",", ":"), ensure_ascii=True).encode()
@@ -649,12 +797,17 @@ def export_viewer(out, params, faces, rects, size, report, common_path, source_u
 
     with np.load(common_path) as archive:
         common = dict(archive)
-    vertices, uv, wires = [], [], []
-    for f, rect in zip(faces, rects):
+    vertices, uv, wires, box_vertex_ends = [], [], [], [0]
+    polygons = render_face_polygons(params["corners"], faces)
+    for i, (f, rect) in enumerate(zip(faces, rects)):
         q = params["corners"][f["box"]][f["indices"]]
-        vertices.extend(q[[0, 1, 2, 0, 2, 3]])
-        uv.extend(face_uv(rect, size)[[0, 1, 2, 0, 2, 3]])
+        for polygon in polygons[i]:
+            triangles = np.array([(0, k, k + 1) for k in range(1, len(polygon) - 1)]).ravel()
+            vertices.extend(polygon[triangles])
+            uv.extend(polygon_uv(polygon, f, rect, size)[triangles])
         wires.extend(q[[0, 1, 1, 2, 2, 3, 3, 0]])
+        if (i + 1) % 6 == 0:
+            box_vertex_ends.append(len(vertices))
     origin = common["points"].min(0)
     scale = float(np.ptp(common["points"], axis=0).max())
     rotation = up_rotation(source_up)
@@ -669,6 +822,7 @@ def export_viewer(out, params, faces, rects, size, report, common_path, source_u
         display_colors = np.clip(linear_to_srgb(display_colors), 0, 1)
     payload = dict(
         vertices=display(vertices),
+        box_vertex_ends=box_vertex_ends,
         uv=encoded(uv),
         wires=display(wires),
         points=display(common["points"]),
@@ -715,16 +869,17 @@ def bake_model(
     if not len(params["corners"]):
         raise ValueError("Cannot texture an empty cuboid model.")
     faces = faces_from_corners(params["corners"])
+    polygons = render_face_polygons(params["corners"], faces)
     from .cuboids import box_membership
 
     boxes = [
         dict(center=c, dimensions=d, rotation=r)
         for c, d, r in zip(params["centers"], params["dimensions"], params["rotations"])
     ]
-    for face in faces:
+    for face, fragments in zip(faces, polygons):
         corners = params["corners"][face["box"]][face["indices"]]
         # A convex face wholly inside an earlier box is invisible in every prefix.
-        face["hidden"] = any(
+        face["hidden"] = not fragments or any(
             box_membership(corners, box, tolerance=-min(face["width"], face["height"]) * 1e-9).all()
             for box in boxes[: face["box"]]
         )
@@ -751,6 +906,8 @@ def bake_model(
             supported, depths = np.zeros((h, w), bool), np.full(h * w, np.nan)
         else:
             rgb, supported, depths = bake_face(face, w, h, cloud, max_depth, backward_depth)
+        visible = face_pixel_mask(face, polygons[i], w, h)
+        visible_support = supported & visible
         tile = np.rint(np.clip(rgb, 0, 1) * 255).astype(np.uint8)
         quality = np.where(
             supported[:, :, None], np.array([51, 188, 147]), np.array([240, 145, 62])
@@ -767,10 +924,12 @@ def bake_model(
                 side=face["side"],
                 rect=list(rect),
                 corner_indices=face["indices"].tolist(),
-                area=face["width"] * face["height"],
+                area=sum(polygon_area(poly) for poly in polygons[i]),
+                unclipped_area=face["width"] * face["height"],
                 hidden_in_all_prefixes=face["hidden"],
-                projected_fraction=float(supported.mean()),
-                median_projection_depth=float(np.nanmedian(depths)) if supported.any() else None,
+                projected_fraction=float(supported[visible].mean()) if visible.any() else 0.0,
+                median_projection_depth=float(np.nanmedian(depths[visible_support.ravel()]))
+                if visible_support.any() else None,
             )
         )
         if (i + 1) % 12 == 0:
@@ -784,7 +943,7 @@ def bake_model(
     report = dict(
         cuboids=len(params["centers"]),
         faces=len(faces),
-        triangles=12 * len(params["centers"]),
+        triangles=sum(len(poly) - 2 for fragments in polygons for poly in fragments),
         atlas_size=[atlas_size] * 2,
         pixels_per_world_unit=density,
         retained_points=len(cloud["points"]),
@@ -794,6 +953,7 @@ def bake_model(
         blending_color_space="linear",
         atlas_color_space="srgb",
         anisotropic_splats=cloud["anisotropic_splats"],
+        kernel_normals_recovered=cloud["kernel_normals_recovered"],
         max_projection_depth=max_depth,
         max_backward_projection_depth=backward_depth,
         supported_area_fraction=sum(
@@ -801,13 +961,14 @@ def bake_model(
         )
         / sum(f["area"] for f in metadata if not f["hidden_in_all_prefixes"]),
         hidden_faces_skipped=sum(f["hidden_in_all_prefixes"] for f in metadata),
-        support_definition="Unambiguous local projection; excludes faces proven hidden in every construction prefix",
+        support_definition="Unambiguous local projection on retained render patches; excludes coplanar duplicates and faces proven hidden in every construction prefix",
         source_up=source_up,
         source_units_per_meter=units_per_meter,
-        method="Nearest supported layer on either side of the cuboid surface"
+        method="Opacity-composited supported layers ordered by distance to the cuboid face"
         + "; anisotropic Gaussian RGB splats weighted by opacity and normal alignment",
+        layer_opacity="Maximum donor opacity per layer; density-independent surface estimate, not a 3DGS camera renderer",
         fallback="Distance-bounded local RGB interpolation, then neutral gray; orange also marks ambiguous layers",
-        geometry="Original cuboids unchanged. No new fit, vertex displacement, added boxes, or topology change.",
+        geometry="Original cuboid parameters unchanged. Only overlapping coplanar render patches are clipped, with the earliest cuboid owning each patch.",
         cuboid_parameters_sha256=original_hash,
         geometry_unchanged=True,
         face_details=metadata,

@@ -1,0 +1,118 @@
+{
+  "scope": "Texture-only corrections; fitting implementation and source cuboid parameters unchanged",
+  "python": "3.14.4",
+  "source": {
+    "path": "examples/ComfyUI_00013/input.ply",
+    "sha256": "5e2b58d47f57eb029568077e8629059210db78575844fa1c7905a021690fe981"
+  },
+  "reference": {
+    "geometry_version": "0.3.0",
+    "cuboids": 13,
+    "parameters_sha256": "e1d8cf2bdab53193fd2bf8144bb3df0d28cc2709935649c6afb2c26acb559fa2",
+    "atlas_size": [
+      2048,
+      2048
+    ],
+    "retained_points": 256167,
+    "geometry_arrays_unchanged": true,
+    "same_atlas_rectangles": true,
+    "kernel_normals_recovered": 13955,
+    "rendered_triangles_before": 156,
+    "rendered_triangles_after": 160,
+    "coplanar_faces_clipped": 2,
+    "coplanar_area_removed": 0.08863622408543871,
+    "support": {
+      "definition": "Unambiguous projection, area-weighted on the same retained render patches",
+      "before": 0.8427271026064769,
+      "after": 0.8581806048634415,
+      "note": "Recomputed from both confidence atlases using the corrected clipping mask; not color accuracy"
+    },
+    "observed_seconds_before": 40.41768579208292,
+    "observed_seconds_after": 59.65539175714366,
+    "timing_note": "Concurrent runs under shared-machine load; no speedup claim",
+    "baseline_texture_implementation_sha256": "7f7e728a78e69c074f0b74c87f8da11795462e2ec11f81d6fda0687286fb82b0"
+  },
+  "current_geometry": {
+    "version": "0.4.0",
+    "cuboids": 16,
+    "parameters_copied_byte_for_byte": true,
+    "parameters_sha256": "29b8a588cf005835422135c09f0ac4705c70f7c004531a7b46f5bd193c72bc33",
+    "cli_exit_code": 3,
+    "status": "Existing partial fit remains partial; texture rebake only",
+    "supported_area_fraction": 0.8058684087997389
+  },
+  "validation": {
+    "python_tests": 172,
+    "passed": true,
+    "strict_corpus": [
+      {
+        "case": "cube",
+        "variant": "regions",
+        "quality_passed": true,
+        "failures": [],
+        "analytic": {
+          "analytic_supported_area_fraction": 1,
+          "analytic_surface_rms": 0
+        }
+      },
+      {
+        "case": "rotated_cube",
+        "variant": "regions",
+        "quality_passed": true,
+        "failures": [],
+        "analytic": {
+          "analytic_supported_area_fraction": 1,
+          "analytic_surface_rms": 3.989408437363219e-16
+        }
+      },
+      {
+        "case": "close_layers",
+        "variant": "regions",
+        "quality_passed": true,
+        "failures": [],
+        "analytic": {
+          "occupied_empty_probes": 0,
+          "analytic_supported_area_fraction": 0.9999984904876983,
+          "analytic_surface_rms": 0.0029125628121081065,
+          "layer_color_p95": [
+            0,
+            0
+          ]
+        }
+      }
+    ],
+    "glb": [
+      {
+        "model": "reference-0.3",
+        "errors": 0,
+        "warnings": 0
+      },
+      {
+        "model": "current-0.4",
+        "errors": 0,
+        "warnings": 0
+      }
+    ],
+    "viewer": "Chromium: initial zero, every construction prefix, all five modes, front/back/reset; no WebGL or JavaScript errors"
+  },
+  "illustration": {
+    "path": "docs/images/pipeline.png",
+    "sha256": "d91139c0f35c10fdb7ed532b017ade151dbc245732fa8fb592ad72d5f7a1a42d",
+    "caption": "Reference geometry 0.3 / corrected texture 0.4",
+    "renderer": "tools/illustrate.py; real atlas UVs and depth-buffered face fragments; no image generation"
+  },
+  "implementation_sha256": {
+    "src/cuboid_approximation/texture.py": "d811e4b0a181f418c723c61f291e02d4ef72e2321c97f3b823833fe7fc473fea",
+    "src/cuboid_approximation/viewer_template.html": "237981f60d6918e72957a6823e42cc90cba3132de73b9adc98a1f09d7de132be",
+    "tools/illustrate.py": "3b68f89ecd28d73aa55727a29f901e915d81c1f37850074210eda639ccb2aa27",
+    "tools/validate_exports.py": "febff8431331988c5a49916f6e5c9f8ad8e9256f9744046d6618b7822ed9cf06"
+  },
+  "commands": {
+    "tests": "python -m unittest discover -s tests",
+    "corpus": "python tools/benchmark.py --strict --case cube --case rotated_cube --case close_layers --output outputs/texture-quality --resolution 32",
+    "current_rebake": "python -m cuboid_approximation --ply examples/ComfyUI_00013/input.ply --rebake outputs/texture-corrected --output outputs/texture-fixed --atlas-size 2048",
+    "reference_bake": "bake_model('examples/ComfyUI_00013/input.ply', reference_run / 'preparation', reference_run / 'cuboids', 'outputs/texture-reference/textured', atlas_size=2048)",
+    "illustration": "python tools/illustrate.py --run REFERENCE_RUN --texture-dir outputs/texture-reference/textured --pipeline-only --output docs/images --caption 'Reference geometry 0.3 / corrected texture 0.4'",
+    "export_validation": "python tools/validate_exports.py --run outputs/texture-fixed; python tools/validate_exports.py --run outputs/texture-reference"
+  }
+}

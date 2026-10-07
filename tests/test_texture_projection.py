@@ -6,7 +6,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 from scipy.spatial.transform import Rotation
 
-from cuboid_approximation.texture import bake_face
+from cuboid_approximation.texture import bake_face, linear_to_srgb
 
 
 def face():
@@ -42,6 +42,50 @@ def cloud(points, spacing=0.1, covariance=None, colors=None, local_spacing=None)
 
 
 class TextureProjectionTests(unittest.TestCase):
+    def test_translucent_front_layer_does_not_hide_opaque_back_layer(self):
+        source = cloud([[0.5, 0.5, 0.005], [0.5, 0.5, 0.03]], spacing=0.02,
+                       colors=[[0, 0, 0], [1, 1, 1]])
+        source["opacity"] = np.array([0.1, 1.0])
+        rgb, supported, depth = bake_face(face(), 1, 1, source, 0.1, 0.1)
+        np.testing.assert_allclose(rgb, linear_to_srgb(0.9))
+        self.assertTrue(supported.all())
+        self.assertAlmostEqual(depth[0], 0.005)
+        source["opacity"][0] = 1
+        opaque, _, _ = bake_face(face(), 1, 1, source, 0.1, 0.1)
+        np.testing.assert_allclose(opaque, 0)
+
+    def test_layer_compositing_is_invariant_to_duplicates_order_and_tiles(self):
+        for duplicates in (1, 130):
+            points = np.vstack(([[0.5, 0.5, 0.005]],
+                                np.tile([0.5, 0.5, 0.03], (duplicates, 1)),
+                                [[0.5, 0.5, 0.06]]))
+            colors = np.vstack(([1, 0, 0], np.tile([0, 1, 0], (duplicates, 1)), [0, 0, 1]))
+            opacity = np.r_[0.1, np.full(duplicates, 0.5), 1.0]
+            for order in (np.arange(len(points)), np.arange(len(points))[::-1]):
+                source = cloud(points[order], spacing=0.02, colors=colors[order],
+                               covariance=np.eye(3) * 2**2)
+                source["opacity"] = opacity[order]
+                rgb, supported, depth = bake_face(face(), 23, 29, source, 0.1, 0.1)
+                expected = np.broadcast_to(linear_to_srgb([0.1, 0.45, 0.45]), rgb.shape)
+                np.testing.assert_allclose(rgb, expected, atol=1e-12)
+                self.assertTrue(supported.all())
+                np.testing.assert_allclose(depth, 0.005)
+
+    def test_single_translucent_layer_is_not_darkened_by_an_invented_background(self):
+        source = cloud([[0.5, 0.5, 0.005]], spacing=0.02, colors=[[1, 1, 1]])
+        source["opacity"] = np.array([0.1])
+        rgb, _, _ = bake_face(face(), 1, 1, source, 0.1, 0.1)
+        np.testing.assert_allclose(rgb, 1)
+
+    def test_single_texel_keeps_more_than_one_raster_batch_of_donors(self):
+        source = cloud(np.vstack((np.tile([0.5, 0.5, 0.005], (65540, 1)),
+                                  [0.5, 0.5, 0.03])), spacing=0.02,
+                       colors=np.vstack((np.zeros((65540, 3)), [1, 1, 1])))
+        source["opacity"] = np.r_[np.full(65540, 0.1), 1.0]
+        rgb, supported, _ = bake_face(face(), 1, 1, source, 0.1, 0.1)
+        np.testing.assert_allclose(rgb, linear_to_srgb(0.9))
+        self.assertTrue(supported.all())
+
     def test_full_anisotropic_footprint_is_projected(self):
         source = cloud([[0.05, 0.5, 0]], covariance=np.diag([0.2**2, 0.035**2, 0.035**2]))
         rgb, supported, depth = bake_face(face(), 1, 1, source, 0.1, 0.1)

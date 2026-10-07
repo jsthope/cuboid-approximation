@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 from cuboid_approximation.cloud import load_points, local_geometry, local_point_spacing
 from cuboid_approximation.regions import SurfaceConfig, segment_surfaces
@@ -19,6 +20,48 @@ def varying_density():
 
 
 class LocalScaleTests(unittest.TestCase):
+    def test_planar_gaussians_recover_normals_and_retain_measured_long_axes(self):
+        points = np.array([[0., 0, 0], [1., 0, 0], [2., 0, 0]])
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            (folder / "report.json").write_text(json.dumps(dict(
+                min_opacity=0.1, median_spacing=0.01,
+            )))
+            np.savez(folder / "common_geometry.npz", points=points,
+                     normals=np.zeros_like(points), normal_valid=np.zeros(3, bool))
+            loaded = dict(points=points, colors=np.ones((3, 3)), opacity=np.ones(3),
+                          spacing_per_point=np.full(3, 0.01), color_source="rgb",
+                          splats=dict(log_scales=np.log(np.tile([0.1, 0.06, 0.005], (3, 1))),
+                                      quaternions_wxyz=np.tile([1, 0, 0, 0], (3, 1))))
+            cloud = load_cloud(folder / "unused.ply", folder, loaded)
+            self.assertEqual(cloud["kernel_normals_recovered"], 3)
+            np.testing.assert_allclose(cloud["normals"], np.tile([0, 0, 1], (3, 1)))
+            np.testing.assert_allclose(cloud["covariance"][:, 0, 0], 0.1**2)
+            np.testing.assert_allclose(cloud["covariance"][:, 1, 1], 0.06**2)
+
+    def test_kernel_normal_recovery_uses_original_minor_axis_and_rotation(self):
+        points = np.array([[0., 0, 0], [1., 0, 0], [2., 0, 0]])
+        rotation = Rotation.from_euler("xyz", [17, 41, -20], degrees=True)
+        quaternion = rotation.as_quat()[[3, 0, 1, 2]]
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            (folder / "report.json").write_text(json.dumps(dict(min_opacity=0.1, median_spacing=1.)))
+            np.savez(folder / "common_geometry.npz", points=points,
+                     normals=np.zeros_like(points), normal_valid=np.zeros(3, bool))
+            # The acquisition floor makes all covariance axes equally large;
+            # the measured Gaussian still contains an unambiguous minor axis.
+            scales = np.array([[.005, .1, .06], [.1, .005, .06], [.1, .06, .005]])
+            loaded = dict(points=points, colors=np.ones((3, 3)), opacity=np.ones(3),
+                          spacing_per_point=np.ones(3), color_source="rgb",
+                          splats=dict(log_scales=np.log(scales),
+                                      quaternions_wxyz=np.array([quaternion, -quaternion, quaternion])))
+            cloud = load_cloud(folder / "unused.ply", folder, loaded)
+            np.testing.assert_allclose(cloud["normals"], rotation.as_matrix().T)
+            loaded["splats"]["log_scales"][:] = np.log(0.1)
+            isotropic = load_cloud(folder / "unused.ply", folder, loaded)
+            self.assertEqual(isotropic["kernel_normals_recovered"], 0)
+            np.testing.assert_allclose(isotropic["normal_confidence"], 0)
+
     def test_dense_component_does_not_invalidate_sparse_plane(self):
         points = varying_density()
         geometry = local_geometry(points)

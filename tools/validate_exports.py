@@ -47,13 +47,18 @@ validator.validateBytes(new Uint8Array(fs.readFileSync(process.argv[1])))
         assert page.evaluate("window.viewerState.vertices") == 0
         assert page.evaluate("window.viewerState.glError") == 0
         count = int(page.locator("#step").get_attribute("max"))
-        page.locator("#step").fill(str(count))
-        page.locator("#step").dispatch_event("input")
+        ends = page.evaluate("data.box_vertex_ends || Array.from({length:data.report.cuboids+1},(_,i)=>i*36)")
+        assert len(ends) == count + 1
+        for prefix in range(1, count + 1):
+            page.locator("#step").fill(str(prefix))
+            page.locator("#step").dispatch_event("input")
+            page.wait_for_function("expected => window.viewerState.vertices === expected", arg=ends[prefix])
+            assert page.evaluate("window.viewerState.glError") == 0
         for mode in ("texture", "cloud", "overlay", "confidence", "compare"):
             page.select_option("#mode", mode)
             page.wait_for_function("mode => window.viewerState.mode === mode", arg=mode)
             assert page.evaluate("window.viewerState.glError") == 0
-        assert page.evaluate("window.viewerState.vertices") == count * 36
+        assert page.evaluate("window.viewerState.vertices") == ends[-1]
         for button in ("#front", "#back", "#reset"):
             page.click(button)
         if args.screenshot:

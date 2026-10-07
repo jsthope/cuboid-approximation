@@ -13,7 +13,7 @@ from matplotlib.patches import Patch
 import numpy as np
 from PIL import Image
 
-from cuboid_approximation.texture import face_uv, faces_from_corners
+from cuboid_approximation.texture import faces_from_corners, polygon_uv, render_face_polygons
 
 
 BG = "#f5f5f4"
@@ -83,10 +83,11 @@ def render_cuboids(params, view, count=None, atlas=None, rectangles=None, size=7
     rgb = np.broadcast_to(np.array([245, 245, 244], np.uint8), (size, size, 3)).copy()
     depth = np.full((size, size), -np.inf)
     faces = faces_from_corners(params["corners"][:count])
+    polygons = render_face_polygons(params["corners"][:count], faces) if count else []
     light = np.array([0.4, -0.6, 1.0])
     light /= np.linalg.norm(light)
-    for i, face in enumerate(faces):
-        q = params["corners"][face["box"]][face["indices"]]
+    fragments = ((i, face, q) for i, face in enumerate(faces) for q in polygons[i])
+    for i, face, q in fragments:
         projected = q @ transform
         projected[:, :2] = (projected[:, :2] - center) / extent * (size - 1) + (size - 1) / 2
         projected[:, 1] = size - 1 - projected[:, 1]
@@ -96,8 +97,8 @@ def render_cuboids(params, view, count=None, atlas=None, rectangles=None, size=7
                 255 * params["colors"][face["box"]] * (0.76 + 0.24 * abs(normal @ light))
             ).astype(np.uint8)
         else:
-            uv = face_uv(rectangles[i], atlas.shape[0])
-        for triangle in ([0, 1, 2], [0, 2, 3]):
+            uv = polygon_uv(q, face, rectangles[i], atlas.shape[0])
+        for triangle in ([0, k, k + 1] for k in range(1, len(q) - 1)):
             a, b, c = projected[triangle]
             low = np.maximum(np.floor(np.min([a[:2], b[:2], c[:2]], axis=0)).astype(int), 0)
             high = np.minimum(np.ceil(np.max([a[:2], b[:2], c[:2]], axis=0)).astype(int), size - 1)
@@ -134,14 +135,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=Path("docs/images"))
+    parser.add_argument("--texture-dir", type=Path, help="Use a separately rebaked texture export")
+    parser.add_argument("--pipeline-only", action="store_true", help="Update only pipeline.png")
+    parser.add_argument("--caption", help="Explicit geometry/texture provenance label")
     args = parser.parse_args()
     root, out = args.run, args.output
+    texture_dir = args.texture_dir or root / "textured"
     out.mkdir(parents=True, exist_ok=True)
     common = dict(np.load(root / "preparation/common_geometry.npz"))
     regions = dict(np.load(root / "preparation/regions.npz"))
     edge_mask, has_edges = edge_diagnostics(root, len(common["points"]))
     params = dict(np.load(root / "cuboids/parameters.npz"))
-    texture = dict(np.load(root / "textured/texture_parameters.npz"))
+    texture = dict(np.load(texture_dir / "texture_parameters.npz"))
+    if not np.array_equal(params["corners"], texture["corners"]):
+        raise ValueError("Texture export geometry does not match the illustrated run.")
     report = read(root / "report.json")
     geometry = report["geometry"]
     view = camera(common["points"])
@@ -160,12 +167,13 @@ def main():
     )
 
     def save(fig, name):
-        fig.supxlabel(f"Cuboid Approximation {report['version']}", fontsize=8, color="#666666")
+        fig.supxlabel(args.caption or f"Cuboid Approximation {report['version']}",
+                      fontsize=8, color="#666666")
         fig.savefig(out / name, dpi=165, bbox_inches="tight", pad_inches=0.12)
         plt.close(fig)
         print(out / name)
 
-    atlas = np.asarray(Image.open(root / "textured/texture_atlas.png"))
+    atlas = np.asarray(Image.open(texture_dir / "texture_atlas.png"))
     colored = render_cuboids(params, view)
     textured = render_cuboids(params, view, atlas=atlas, rectangles=texture["atlas_rectangles"])
     fig, axes = plt.subplots(1, 3, figsize=(12, 4), layout="constrained")
@@ -173,6 +181,8 @@ def main():
     image_panel(axes[1], colored, f"{geometry['cuboids']} incremental cuboids")
     image_panel(axes[2], textured, "Projected PLY colors")
     save(fig, "pipeline.png")
+    if args.pipeline_only:
+        return
 
     fig, axes = plt.subplots(1, 3, figsize=(12, 4), layout="constrained")
     point_panel(
