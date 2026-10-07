@@ -1,0 +1,208 @@
+{
+  "producer_version": "0.3.0",
+  "input": "examples/ComfyUI_00013/input.ply",
+  "input_sha256": "5e2b58d47f57eb029568077e8629059210db78575844fa1c7905a021690fe981",
+  "environment": {
+    "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+    "dependencies": {
+      "numpy": "2.3.5",
+      "scipy": "1.16.3",
+      "plyfile": "1.1.5",
+      "Pillow": "12.1.1"
+    }
+  },
+  "implementation_sha256": {
+    "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+    "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+    "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+    "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+    "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+    "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+    "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+    "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+    "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+    "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+    "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+    "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+    "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+    "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+  },
+  "checks": {
+    "unit_tests": 53,
+    "unit_tests_passed": true,
+    "lint_passed": true,
+    "wheel_and_sdist_built": true,
+    "corpus_runs": 21,
+    "corpus_targets_passed": 21,
+    "gltf_errors": 0,
+    "gltf_warnings": 0,
+    "chromium_viewers_validated": [
+      "example",
+      "cube-regions"
+    ],
+    "chromium_controls": [
+      "all five display modes",
+      "construction slider",
+      "front/back/reset"
+    ]
+  },
+  "commands": [
+    "python -m unittest discover -s tests -v",
+    "python -m ruff check src tests tools",
+    "python -m build",
+    "python tools/benchmark.py --output outputs/quality --ablation",
+    "python -m cProfile -o outputs/example.profile -m cuboid_approximation --ply examples/ComfyUI_00013/input.ply --output outputs/example --resolution 64 --max-points 6000 --max-frames 8 --seeds-per-frame 8 --max-cuboids 16 --atlas-size 512",
+    "python tools/validate_exports.py --run outputs/example --screenshot outputs/example/viewer.png",
+    "python tools/validate_exports.py --run outputs/quality/cube-regions",
+    "python tools/illustrate.py --run outputs/example --output docs/images"
+  ],
+  "review_fixes": [
+    {
+      "topic": "surface_objective",
+      "change": "Success now requires raw and spatial volume coverage, spatial source-to-exterior coverage and supported exterior area.",
+      "files": [
+        "src/cuboid_approximation/pipeline.py",
+        "src/cuboid_approximation/approximation.py"
+      ]
+    },
+    {
+      "topic": "continuous_metrics",
+      "change": "Clipped union boundary removes contact/overlap faces; BVH queries use continuous triangles and reverse metrics use area quadrature.",
+      "files": [
+        "src/cuboid_approximation/geometry.py",
+        "src/cuboid_approximation/approximation.py"
+      ]
+    },
+    {
+      "topic": "candidate_refinement",
+      "change": "Tight bounds, robust quantiles, independent face moves and small rotations refine candidates before immutable commitment.",
+      "files": [
+        "src/cuboid_approximation/cuboids.py",
+        "src/cuboid_approximation/fitting.py"
+      ]
+    },
+    {
+      "topic": "residual_proposals",
+      "change": "Spatial residual proposals with local PCA are injected periodically during selection.",
+      "files": [
+        "src/cuboid_approximation/cuboids.py",
+        "src/cuboid_approximation/fitting.py"
+      ]
+    },
+    {
+      "topic": "density_and_outliers",
+      "change": "Equal occupied-cell mass replaces clipped density weights; local outlier comparison preserves coherent sparse components.",
+      "files": [
+        "src/cuboid_approximation/cloud.py",
+        "src/cuboid_approximation/approximation.py"
+      ]
+    },
+    {
+      "topic": "resolution_stability",
+      "change": "Reconstruction barrier follows physical source spacing, with explicit solid/surface modes and open-shell regression coverage.",
+      "files": [
+        "src/cuboid_approximation/volume.py"
+      ]
+    },
+    {
+      "topic": "memory_defaults",
+      "change": "Resolution defaults to 160; support and padded envelope memory are checked before normal estimation.",
+      "files": [
+        "src/cuboid_approximation/volume.py",
+        "src/cuboid_approximation/pipeline.py",
+        "src/cuboid_approximation/cuboids.py"
+      ]
+    },
+    {
+      "topic": "unnecessary_computation",
+      "change": "Reuse spacing and distinct indices, scalar cell keys and exact AABB broad phases; skip unused regions/frames and rotated grids for an exact one-box fit. PCA is the measured default.",
+      "files": [
+        "src/cuboid_approximation/cloud.py",
+        "src/cuboid_approximation/geometry.py",
+        "src/cuboid_approximation/fitting.py",
+        "src/cuboid_approximation/pipeline.py"
+      ]
+    },
+    {
+      "topic": "texture_support_and_color",
+      "change": "Recover normals from valid compatible neighbors with bounded PCA fallback; restrict interpolation by distance and depth; blend in linear light.",
+      "files": [
+        "src/cuboid_approximation/texture.py"
+      ]
+    },
+    {
+      "topic": "atlas_and_viewer",
+      "change": "Free-rectangle packing, bounded mipmaps, sRGB texture sampling and corrected confidence legend; real Chromium interaction and GL error checks.",
+      "files": [
+        "src/cuboid_approximation/texture.py",
+        "src/cuboid_approximation/viewer_template.html",
+        "tools/validate_exports.py"
+      ]
+    },
+    {
+      "topic": "checkpoint_and_certification",
+      "change": "Atomic alternating checkpoints after each committed box; provenance/integrity checks and cached preparation/envelope; local and world certificates precede commitment.",
+      "files": [
+        "src/cuboid_approximation/checkpoint.py",
+        "src/cuboid_approximation/fitting.py",
+        "src/cuboid_approximation/cuboids.py"
+      ]
+    },
+    {
+      "topic": "maintenance",
+      "change": "Shared box topology, geometry and checkpoint serialization; remove unused reconstruction helpers and align the stated resume policy with rebaked textures.",
+      "files": [
+        "src/cuboid_approximation/geometry.py",
+        "src/cuboid_approximation/checkpoint.py",
+        "src/cuboid_approximation/volume.py",
+        "src/cuboid_approximation/cuboids.py"
+      ]
+    },
+    {
+      "topic": "validation_and_documentation",
+      "change": "53 regression tests; seven synthetic cases with three orientation variants; actual input comparison, export/browser checks, CI, current figures and explicit limitations.",
+      "files": [
+        "tests/test_quality.py",
+        "tools/benchmark.py",
+        "README.md"
+      ]
+    }
+  ],
+  "limitations": [
+    "The real example exits 3: volume/spatial targets pass, source-to-exterior coverage does not. Its source surface coverage is about 86.6%, below the requested 99.9%.",
+    "Selection is heuristic and geometry is immutable after commitment; no global optimum or minimum box count is proven.",
+    "Source distances are continuous; reverse area-support and RMS metrics use quadrature and are not Hausdorff bounds.",
+    "Dense grid memory estimates are conservative workspace checks, not total process RSS limits.",
+    "Profiled timings are environment-dependent; before and after runs were not an isolated timing experiment.",
+    "Texture support is a projection diagnostic; it is not a color-accuracy measurement.",
+    "Local validation used Python 3.14.4 and the recorded dependencies. Python 3.10/3.12 jobs are configured in CI but were not executed here."
+  ],
+  "figures": {
+    "producer_version": "0.3.0",
+    "run": "example-report.json",
+    "orientation_mode": "pca"
+  },
+  "historical_artifacts": {
+    "path": "examples/ComfyUI_00013",
+    "producer_version": "0.1.0",
+    "unchanged": true
+  },
+  "artifact_sha256": {
+    "after-geometry.npz": "12440555102dddeb57b20280814d9aba6ec4241939279966b6bc1c914c95b33b",
+    "before-geometry.npz": "f434ea86a71a40d4f20001765aed8c25a94454b5c4658f32f36ba6e86ee77d7b",
+    "comparison.json": "b1f66e5c72ecffa83e38fd443d9ff7165b55d4ea4b81c1ec1694500407687238",
+    "corpus.json": "7ce9f26af37c154249864dade57d03c56fe85dda91032fd419a7cc7f72648ba8",
+    "example-report.json": "faea17468293926961ff4c55ec8f5089c5a46bdeca9a1569ac40be3afdaf8eb7",
+    "gltf-validation.json": "ed705b9c958e91c1cc3b06e42c13d8a18fd91358212eb6a45b5cec4aa3ee79f1",
+    "model.glb": "2e288f2d33f63b78543bfdf317460778f082ef1b2ddb2f04150f428110605331",
+    "viewer.html": "af5ec79fbeb8f2d3303c481d2f19df60c02455f0ea8c4ecddb47b0ee77ee7bae",
+    "viewer.png": "34fa6c2c01d4f424dc7bcc5d59f5cee3ed0c44eadbc847c524cc02599cafd771"
+  },
+  "figure_sha256": {
+    "docs/images/coverage.png": "7869004b5dfad4bb81c43cf33492fbb0ddac26e7c767f86f737331abd6f692a6",
+    "docs/images/envelope.png": "3ec55d5ffe8c838c4e696475504264e193f2773243299592502ef231a18378c2",
+    "docs/images/increments.png": "e5416dc6e575a0ca7a8dbbdf3592ceb0e9829c257e681c8cc0d464134369796e",
+    "docs/images/pipeline.png": "56eb91aa5c45036b1deaa447c46dd6900f8728287acd8978b8e86abda0a8bcac",
+    "docs/images/regions.png": "3a904302770f5a79a8d8b3eacc44752e360981427ae12e86d28e692f0adc7d27"
+  }
+}

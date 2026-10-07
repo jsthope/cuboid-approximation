@@ -1,0 +1,7 @@
+include README.md LICENSE requirements-lock.txt
+recursive-include docs *.png *.json
+recursive-include examples *.ply *.glb *.json *.html *.png *.npz
+recursive-include tests *.py
+recursive-include tools *.py
+prune outputs
+prune .venv

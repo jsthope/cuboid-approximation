@@ -1,0 +1,1910 @@
+{
+  "status": "target_not_reached",
+  "version": "0.3.0",
+  "input": "input.ply",
+  "input_sha256": "5e2b58d47f57eb029568077e8629059210db78575844fa1c7905a021690fe981",
+  "started_utc": "2026-10-03T13:57:11.680842+00:00",
+  "config": {
+    "target_coverage": 0.999,
+    "max_cuboids": 16,
+    "max_points": 6000,
+    "resolution": 64,
+    "normal_angle": 30.0,
+    "min_opacity": 0.1,
+    "approximation_distance_factor": 2.0,
+    "point_tolerance_factor": 2.0,
+    "exterior_penalty": 2.0,
+    "max_frames": 8,
+    "seeds_per_frame": 8,
+    "seed": 42,
+    "atlas_size": 512,
+    "point_tolerance": null,
+    "reconstruction_mode": "solid",
+    "max_memory_mb": 2048,
+    "outlier_distance_factor": 50.0,
+    "source_up": "-y",
+    "units_per_meter": 1.0,
+    "target_surface_support": 0.95,
+    "color_space": "srgb",
+    "orientation_mode": "pca",
+    "edge_barriers": true
+  },
+  "resumed_from": null,
+  "environment": {
+    "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+    "dependencies": {
+      "numpy": "2.3.5",
+      "scipy": "1.16.3",
+      "plyfile": "1.1.5",
+      "Pillow": "12.1.1"
+    }
+  },
+  "cuboid_config": {
+    "approximation_distance_factor": 2.0,
+    "approximation_exterior_penalty": 2.0,
+    "approximation_detail_factor": 2.0,
+    "splat_sigma": 2.5,
+    "resolution": 64,
+    "shell_layers": 1,
+    "max_frames": 8,
+    "seeds_per_frame": 8,
+    "target_coverage": 0.999,
+    "target_surface_support": 0.95,
+    "residual_interval": 4,
+    "max_cuboids": 16,
+    "min_component_voxels": 16,
+    "frame_angle_degrees": 2.0,
+    "seed": 42,
+    "reconstruction_mode": "solid",
+    "max_memory_mb": 2048,
+    "point_tolerance": null
+  },
+  "implementation_sha256": {
+    "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+    "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+    "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+    "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+    "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+    "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+    "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+    "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+    "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+    "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+    "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+    "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+    "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+    "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+  },
+  "stages": [
+    {
+      "name": "Load PLY, estimate normals and segment regions",
+      "status": "complete",
+      "seconds": 3.0535908178426325
+    },
+    {
+      "name": "Append and certify cuboids",
+      "status": "complete",
+      "seconds": 34.62301354808733
+    },
+    {
+      "name": "Project colors and export the model",
+      "status": "complete",
+      "seconds": 8.261219752021134
+    }
+  ],
+  "preparation": {
+    "source_points": 262144,
+    "retained_points": 256167,
+    "sampled_points": 5852,
+    "median_spacing": 0.019762091935917648,
+    "full_cloud_median_spacing": 0.001966222179252343,
+    "outlier_distance_factor": 50.0,
+    "rejected_outlier_count": 0,
+    "rejected_outlier_source_indices": [],
+    "invalid_sample_normals": 3048,
+    "sample_voxel_size": 0.028696354912866963,
+    "gaussian_splats": true,
+    "orientation_mode": "pca",
+    "edge_barriers_enabled": false,
+    "min_opacity": 0.1,
+    "edge_points": 583,
+    "supported_barriers": 0,
+    "regions": 0,
+    "normal_neighbors": 30,
+    "normal_radius_factor": 6.0,
+    "normal_angle_degrees": 30.0,
+    "line_config": {
+      "distance_factor": 1.35,
+      "gap_factor": 3.5,
+      "min_length_factor": 8.0,
+      "tangent_radius_factor": 6.0,
+      "min_linearity": 0.6,
+      "angle_degrees": 25.0,
+      "merge_angle_degrees": 10.0,
+      "min_support": 10,
+      "min_linear_fraction": 0.5,
+      "max_segments": 180,
+      "trials_per_step": 24,
+      "max_trials": 1800,
+      "seed": 42
+    },
+    "region_config": {
+      "neighbors": 16,
+      "neighbor_radius_factor": 3.5,
+      "line_barrier_factor": 2.0,
+      "normal_angle_degrees": 25.0,
+      "tangent_distance_factor": 0.75,
+      "min_region_points": 50,
+      "attachment_radius_factor": 5.0,
+      "attachment_angle_degrees": 55.0,
+      "attachment_plane_factor": 2.0
+    }
+  },
+  "geometry": {
+    "cuboids": 13,
+    "target_coverage": 0.999,
+    "target_reached": false,
+    "volume_target_reached": true,
+    "spatial_target_reached": true,
+    "surface_target_reached": false,
+    "sampled_proximity": 0.9993164730006835,
+    "full_cloud_proximity": 0.9994222518903684,
+    "surface_tolerance": 0.03125122468918562,
+    "coverage_population": "all retained source points, including duplicate observations",
+    "approximation": {
+      "mode": "approximate",
+      "distance_limit": 0.03125122468918562,
+      "full_cloud_median_spacing": 0.001966222179252343,
+      "reference_voxels": 48723,
+      "conservative_voxels": 35640,
+      "envelope_voxels": 76006,
+      "reference": "inferred conservative interior union observed splat/center voxels",
+      "certificate": "every cuboid is contained in the bounded error envelope",
+      "exterior_penalty": 2.0,
+      "estimated_box_exterior_fractions": [
+        0.03103298611111116,
+        0.04447707275827972,
+        0.036111111111111094,
+        0.016012602421933253,
+        0.12136171218340241,
+        0.044238683127572065,
+        0.03530092592592593,
+        0.045730144827805796,
+        0.04094927908291901,
+        0.0571180555555556,
+        0.17333333333333334,
+        0.02083333333333337,
+        0.07100887047959614
+      ],
+      "estimated_exterior_fraction_volume_weighted": 0.042206433263350523,
+      "exterior_estimator": "exact voxel overlap for axis-aligned boxes; seeded jittered strata otherwise; per-box, not union volume",
+      "surface": {
+        "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+        "exposed_samples": 5260,
+        "estimated_exposed_area": 3.175523870954173,
+        "estimated_hidden_area_fraction": 0.44451318844518406,
+        "source_to_surface_p95": 0.029763413974745558,
+        "source_to_surface_rms": 0.01943905073267281,
+        "source_surface_coverage": 0.8661597527787308,
+        "surface_to_source_rms": 0.011847381432078594,
+        "surface_supported_area_fraction": 0.9931599960741635,
+        "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+      },
+      "coverage_tolerance": 0.03125122468918562,
+      "spatial_coverage": 0.9993979954565653,
+      "component_spatial_coverage": [
+        0.99939799545657
+      ],
+      "minimum_component_coverage": 0.99939799545657,
+      "largest_uncovered_patch_points": 77,
+      "point_distance_quantiles": {
+        "median": 0.0,
+        "p90": 0.013174698002660861,
+        "p95": 0.01861463348682925,
+        "p99": 0.02589419061967757,
+        "maximum": 0.03896115558343964
+      }
+    },
+    "excluded_envelope_voxel_intersections": 0,
+    "candidate_count": 1187,
+    "orientations": 8,
+    "selection": {
+      "enabled": true,
+      "mode": "incremental",
+      "pool_candidates": 1187,
+      "frozen_prefix_count": 0,
+      "added_count": 13,
+      "spatial_coverage": 0.9993979954565653,
+      "stopping_reason": "surface_quality_not_reached",
+      "finite_pool_minimum_proven": false,
+      "global_minimum_proven": false,
+      "policy": "append only; committed geometry and order are immutable; textures are rebaked on resume"
+    },
+    "incremental_steps": [
+      {
+        "cuboids": 0,
+        "sampled_proximity": 0.0,
+        "full_cloud_proximity": 0.0
+      },
+      {
+        "cuboids": 1,
+        "sampled_proximity": 0.45727956254272045,
+        "full_cloud_proximity": 0.35566251702990626
+      },
+      {
+        "cuboids": 2,
+        "sampled_proximity": 0.6498632946001367,
+        "full_cloud_proximity": 0.5468112598422123
+      },
+      {
+        "cuboids": 3,
+        "sampled_proximity": 0.7168489405331511,
+        "full_cloud_proximity": 0.6017363672916496
+      },
+      {
+        "cuboids": 4,
+        "sampled_proximity": 0.7648667122351333,
+        "full_cloud_proximity": 0.6575593265330819
+      },
+      {
+        "cuboids": 5,
+        "sampled_proximity": 0.8412508544087491,
+        "full_cloud_proximity": 0.7814784886421748
+      },
+      {
+        "cuboids": 6,
+        "sampled_proximity": 0.8923444976076556,
+        "full_cloud_proximity": 0.8396475736531247
+      },
+      {
+        "cuboids": 7,
+        "sampled_proximity": 0.939336978810663,
+        "full_cloud_proximity": 0.8933703404419773
+      },
+      {
+        "cuboids": 8,
+        "sampled_proximity": 0.9728298017771702,
+        "full_cloud_proximity": 0.9449304555231548
+      },
+      {
+        "cuboids": 9,
+        "sampled_proximity": 0.9820574162679426,
+        "full_cloud_proximity": 0.9612674544340215
+      },
+      {
+        "cuboids": 10,
+        "sampled_proximity": 0.9887218045112782,
+        "full_cloud_proximity": 0.9702108390229811
+      },
+      {
+        "cuboids": 11,
+        "sampled_proximity": 0.9938482570061518,
+        "full_cloud_proximity": 0.9839323566267317
+      },
+      {
+        "cuboids": 12,
+        "sampled_proximity": 0.9989747095010253,
+        "full_cloud_proximity": 0.9966467187420706
+      },
+      {
+        "cuboids": 13,
+        "sampled_proximity": 0.9993164730006835,
+        "full_cloud_proximity": 0.9994222518903684
+      }
+    ],
+    "reconstruction": {
+      "method": "splat_ellipsoids",
+      "sigma": 2.5,
+      "valid_splats": 256167,
+      "center_only_splats": 0,
+      "capped_splats": 2191,
+      "maximum_principal_scale": 0.01562561234459281,
+      "full_cloud_median_spacing": 0.001966222179252343,
+      "mode": "solid",
+      "occupied_voxels": 33937,
+      "barrier_voxels": 58322,
+      "enclosed_empty_voxels": 7039,
+      "reconstruction_layers": 1,
+      "safe_voxels": 35640
+    },
+    "seconds": 28.770454017911106,
+    "parameters_sha256": "e1d8cf2bdab53193fd2bf8144bb3df0d28cc2709935649c6afb2c26acb559fa2",
+    "search_state_sha256": "1955f8f05d6e9b52680498343db3927f7da9fb690afc821f61ee3e580e739d90"
+  },
+  "target_reached": false,
+  "texture": {
+    "cuboids": 13,
+    "faces": 78,
+    "triangles": 156,
+    "atlas_size": [
+      512,
+      512
+    ],
+    "pixels_per_world_unit": 164.28998977677148,
+    "retained_points": 256167,
+    "median_spacing": 0.001966222179252343,
+    "color_source": "gaussian_sh_dc",
+    "source_color_space": "srgb",
+    "blending_color_space": "linear",
+    "atlas_color_space": "srgb",
+    "anisotropic_splats": 256167,
+    "max_projection_depth": 0.07812806172296405,
+    "max_backward_projection_depth": 0.07812806172296405,
+    "supported_area_fraction": 0.6752873202058842,
+    "hidden_faces_skipped": 0,
+    "support_definition": "Unambiguous local projection; excludes faces proven hidden in every construction prefix",
+    "source_up": "-y",
+    "source_units_per_meter": 1.0,
+    "method": "Nearest supported layer on either side of the cuboid surface; anisotropic Gaussian RGB splats weighted by opacity and normal alignment",
+    "fallback": "Distance-bounded local RGB interpolation, then neutral gray; orange also marks ambiguous layers",
+    "geometry": "Original cuboids unchanged. No new fit, vertex displacement, added boxes, or topology change.",
+    "cuboid_parameters_sha256": "e1d8cf2bdab53193fd2bf8144bb3df0d28cc2709935649c6afb2c26acb559fa2",
+    "geometry_unchanged": true,
+    "face_details": [
+      {
+        "box": 1,
+        "side": 0,
+        "rect": [
+          4,
+          162,
+          75,
+          66
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.1811405606494838,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.5581818181818182,
+        "median_projection_depth": 0.004960023798048496
+      },
+      {
+        "box": 1,
+        "side": 1,
+        "rect": [
+          4,
+          236,
+          75,
+          66
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.1811405606494838,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8533333333333334,
+        "median_projection_depth": 0.0006363082211464643
+      },
+      {
+        "box": 1,
+        "side": 2,
+        "rect": [
+          408,
+          4,
+          87,
+          66
+        ],
+        "corner_indices": [
+          0,
+          4,
+          5,
+          1
+        ],
+        "area": 0.21073083744469692,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9268547544409613,
+        "median_projection_depth": -0.009012676775455475
+      },
+      {
+        "box": 1,
+        "side": 3,
+        "rect": [
+          4,
+          88,
+          87,
+          66
+        ],
+        "corner_indices": [
+          3,
+          7,
+          6,
+          2
+        ],
+        "area": 0.21073083744469692,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.5764541971438523,
+        "median_projection_depth": -0.00358006008900702
+      },
+      {
+        "box": 1,
+        "side": 4,
+        "rect": [
+          218,
+          4,
+          87,
+          75
+        ],
+        "corner_indices": [
+          2,
+          6,
+          4,
+          0
+        ],
+        "area": 0.23888147536963042,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9242911877394636,
+        "median_projection_depth": -0.010199226438999176
+      },
+      {
+        "box": 1,
+        "side": 5,
+        "rect": [
+          313,
+          4,
+          87,
+          75
+        ],
+        "corner_indices": [
+          1,
+          5,
+          7,
+          3
+        ],
+        "area": 0.23888147536963042,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9166283524904214,
+        "median_projection_depth": 0.004125906620174646
+      },
+      {
+        "box": 2,
+        "side": 0,
+        "rect": [
+          277,
+          88,
+          65,
+          57
+        ],
+        "corner_indices": [
+          0,
+          1,
+          3,
+          2
+        ],
+        "area": 0.13428786860596914,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.33819163292847504,
+        "median_projection_depth": -0.03475271165370941
+      },
+      {
+        "box": 2,
+        "side": 1,
+        "rect": [
+          350,
+          88,
+          65,
+          57
+        ],
+        "corner_indices": [
+          6,
+          7,
+          5,
+          4
+        ],
+        "area": 0.13428786860596914,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8475033738191633,
+        "median_projection_depth": -0.0011323457583785057
+      },
+      {
+        "box": 2,
+        "side": 2,
+        "rect": [
+          4,
+          310,
+          81,
+          65
+        ],
+        "corner_indices": [
+          0,
+          4,
+          5,
+          1
+        ],
+        "area": 0.19216970997385996,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9135802469135802,
+        "median_projection_depth": -0.0022153169848024845
+      },
+      {
+        "box": 2,
+        "side": 3,
+        "rect": [
+          4,
+          383,
+          81,
+          65
+        ],
+        "corner_indices": [
+          3,
+          7,
+          6,
+          2
+        ],
+        "area": 0.19216970997385996,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.3513770180436847,
+        "median_projection_depth": -0.005799915175884962
+      },
+      {
+        "box": 2,
+        "side": 4,
+        "rect": [
+          99,
+          88,
+          81,
+          57
+        ],
+        "corner_indices": [
+          2,
+          6,
+          4,
+          0
+        ],
+        "area": 0.16910934477515194,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8449209443361491,
+        "median_projection_depth": -0.009454444982111454
+      },
+      {
+        "box": 2,
+        "side": 5,
+        "rect": [
+          188,
+          88,
+          81,
+          57
+        ],
+        "corner_indices": [
+          1,
+          5,
+          7,
+          3
+        ],
+        "area": 0.16910934477515194,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8810916179337231,
+        "median_projection_depth": 0.02251860499382019
+      },
+      {
+        "box": 3,
+        "side": 0,
+        "rect": [
+          415,
+          185,
+          72,
+          22
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.05839679204115379,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6470959595959596,
+        "median_projection_depth": -0.00835622288286686
+      },
+      {
+        "box": 3,
+        "side": 1,
+        "rect": [
+          99,
+          405,
+          72,
+          22
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.05839679204115378,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9109848484848485,
+        "median_projection_depth": -0.001452913973480463
+      },
+      {
+        "box": 3,
+        "side": 2,
+        "rect": [
+          472,
+          215,
+          24,
+          22
+        ],
+        "corner_indices": [
+          0,
+          4,
+          5,
+          1
+        ],
+        "area": 0.01911024516668373,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.020833333333333332,
+        "median_projection_depth": -0.06490065157413483
+      },
+      {
+        "box": 3,
+        "side": 3,
+        "rect": [
+          472,
+          245,
+          24,
+          22
+        ],
+        "corner_indices": [
+          3,
+          7,
+          6,
+          2
+        ],
+        "area": 0.019110245166683727,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8787878787878788,
+        "median_projection_depth": -0.0021374556235969067
+      },
+      {
+        "box": 3,
+        "side": 4,
+        "rect": [
+          4,
+          456,
+          72,
+          24
+        ],
+        "corner_indices": [
+          0,
+          2,
+          6,
+          4
+        ],
+        "area": 0.06237600000027831,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6684027777777778,
+        "median_projection_depth": 0.005839959718286991
+      },
+      {
+        "box": 3,
+        "side": 5,
+        "rect": [
+          415,
+          153,
+          72,
+          24
+        ],
+        "corner_indices": [
+          5,
+          7,
+          3,
+          1
+        ],
+        "area": 0.06237600000027832,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8379629629629629,
+        "median_projection_depth": -0.0015242327935993671
+      },
+      {
+        "box": 4,
+        "side": 0,
+        "rect": [
+          206,
+          304,
+          133,
+          20
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.09432430410542939,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.5507518796992481,
+        "median_projection_depth": -0.0020683174952864647
+      },
+      {
+        "box": 4,
+        "side": 1,
+        "rect": [
+          347,
+          304,
+          133,
+          20
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.09432430410542939,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6733082706766917,
+        "median_projection_depth": -0.0030774930492043495
+      },
+      {
+        "box": 4,
+        "side": 2,
+        "rect": [
+          130,
+          463,
+          21,
+          20
+        ],
+        "corner_indices": [
+          0,
+          4,
+          5,
+          1
+        ],
+        "area": 0.014645770672341605,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8333333333333334,
+        "median_projection_depth": -0.001998122315853834
+      },
+      {
+        "box": 4,
+        "side": 3,
+        "rect": [
+          159,
+          463,
+          21,
+          20
+        ],
+        "corner_indices": [
+          3,
+          7,
+          6,
+          2
+        ],
+        "area": 0.014645770672341605,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6904761904761905,
+        "median_projection_depth": 0.0009026706102304161
+      },
+      {
+        "box": 4,
+        "side": 4,
+        "rect": [
+          206,
+          275,
+          133,
+          21
+        ],
+        "corner_indices": [
+          0,
+          2,
+          6,
+          4
+        ],
+        "area": 0.10063879906638155,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9394915861081274,
+        "median_projection_depth": -0.00045429152669385076
+      },
+      {
+        "box": 4,
+        "side": 5,
+        "rect": [
+          347,
+          275,
+          133,
+          21
+        ],
+        "corner_indices": [
+          5,
+          7,
+          3,
+          1
+        ],
+        "area": 0.10063879906638155,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.32116004296455425,
+        "median_projection_depth": -0.0046284073032438755
+      },
+      {
+        "box": 5,
+        "side": 0,
+        "rect": [
+          99,
+          153,
+          150,
+          54
+        ],
+        "corner_indices": [
+          0,
+          1,
+          3,
+          2
+        ],
+        "area": 0.2993997962176423,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6622222222222223,
+        "median_projection_depth": -0.009482696652412415
+      },
+      {
+        "box": 5,
+        "side": 1,
+        "rect": [
+          257,
+          153,
+          150,
+          54
+        ],
+        "corner_indices": [
+          6,
+          7,
+          5,
+          4
+        ],
+        "area": 0.2993997962176423,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6046913580246913,
+        "median_projection_depth": -0.005805101711302996
+      },
+      {
+        "box": 5,
+        "side": 2,
+        "rect": [
+          349,
+          332,
+          150,
+          6
+        ],
+        "corner_indices": [
+          4,
+          5,
+          1,
+          0
+        ],
+        "area": 0.028519571260417147,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6166666666666667,
+        "median_projection_depth": 0.0011294319992884994
+      },
+      {
+        "box": 5,
+        "side": 3,
+        "rect": [
+          349,
+          346,
+          150,
+          6
+        ],
+        "corner_indices": [
+          2,
+          3,
+          7,
+          6
+        ],
+        "area": 0.028519571260417147,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.5088888888888888,
+        "median_projection_depth": -0.00883608590811491
+      },
+      {
+        "box": 5,
+        "side": 4,
+        "rect": [
+          245,
+          456,
+          54,
+          6
+        ],
+        "corner_indices": [
+          0,
+          2,
+          6,
+          4
+        ],
+        "area": 0.010252802458663255,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.1419753086419753,
+        "median_projection_depth": -0.003917017951607704
+      },
+      {
+        "box": 5,
+        "side": 5,
+        "rect": [
+          245,
+          470,
+          54,
+          6
+        ],
+        "corner_indices": [
+          5,
+          7,
+          3,
+          1
+        ],
+        "area": 0.010252802458663255,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.48148148148148145,
+        "median_projection_depth": -0.0005201551830396056
+      },
+      {
+        "box": 6,
+        "side": 0,
+        "rect": [
+          206,
+          215,
+          125,
+          22
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.09905228964637351,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.36654545454545456,
+        "median_projection_depth": -0.02064848691225052
+      },
+      {
+        "box": 6,
+        "side": 1,
+        "rect": [
+          339,
+          215,
+          125,
+          22
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.09905228964637351,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8738181818181818,
+        "median_projection_depth": -0.0005302687641233206
+      },
+      {
+        "box": 6,
+        "side": 2,
+        "rect": [
+          168,
+          343,
+          22,
+          22
+        ],
+        "corner_indices": [
+          0,
+          4,
+          5,
+          1
+        ],
+        "area": 0.017358555281663413,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9772727272727273,
+        "median_projection_depth": -0.0028947279788553715
+      },
+      {
+        "box": 6,
+        "side": 3,
+        "rect": [
+          168,
+          374,
+          22,
+          22
+        ],
+        "corner_indices": [
+          3,
+          7,
+          6,
+          2
+        ],
+        "area": 0.017358555281663413,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.7747933884297521,
+        "median_projection_depth": 1.9754668755922467e-05
+      },
+      {
+        "box": 6,
+        "side": 4,
+        "rect": [
+          206,
+          245,
+          125,
+          22
+        ],
+        "corner_indices": [
+          0,
+          2,
+          6,
+          4
+        ],
+        "area": 0.10084650548080003,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9072727272727272,
+        "median_projection_depth": -0.0016147105488926172
+      },
+      {
+        "box": 6,
+        "side": 5,
+        "rect": [
+          339,
+          245,
+          125,
+          22
+        ],
+        "corner_indices": [
+          5,
+          7,
+          3,
+          1
+        ],
+        "area": 0.10084650548080007,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.3109090909090909,
+        "median_projection_depth": 0.00274041760712862
+      },
+      {
+        "box": 7,
+        "side": 0,
+        "rect": [
+          4,
+          488,
+          61,
+          20
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.04371777943231438,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6401639344262295,
+        "median_projection_depth": -0.006692973431199789
+      },
+      {
+        "box": 7,
+        "side": 1,
+        "rect": [
+          99,
+          435,
+          61,
+          20
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.04371777943231438,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8762295081967213,
+        "median_projection_depth": -0.008039256557822227
+      },
+      {
+        "box": 7,
+        "side": 2,
+        "rect": [
+          168,
+          435,
+          23,
+          20
+        ],
+        "corner_indices": [
+          0,
+          4,
+          5,
+          1
+        ],
+        "area": 0.016628499022530892,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.06739130434782609,
+        "median_projection_depth": -0.04696061462163925
+      },
+      {
+        "box": 7,
+        "side": 3,
+        "rect": [
+          99,
+          463,
+          23,
+          20
+        ],
+        "corner_indices": [
+          3,
+          7,
+          6,
+          2
+        ],
+        "area": 0.016628499022530892,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8369565217391305,
+        "median_projection_depth": -0.0007343404577113688
+      },
+      {
+        "box": 7,
+        "side": 4,
+        "rect": [
+          99,
+          343,
+          61,
+          23
+        ],
+        "corner_indices": [
+          0,
+          2,
+          6,
+          4
+        ],
+        "area": 0.05147366361007433,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8018531717747683,
+        "median_projection_depth": -0.0009705711272545159
+      },
+      {
+        "box": 7,
+        "side": 5,
+        "rect": [
+          99,
+          374,
+          61,
+          23
+        ],
+        "corner_indices": [
+          5,
+          7,
+          3,
+          1
+        ],
+        "area": 0.05147366361007433,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.910192444761226,
+        "median_projection_depth": 0.001271200249902904
+      },
+      {
+        "box": 8,
+        "side": 0,
+        "rect": [
+          99,
+          279,
+          72,
+          24
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.06098679357553201,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8570601851851852,
+        "median_projection_depth": -0.010105028748512268
+      },
+      {
+        "box": 8,
+        "side": 1,
+        "rect": [
+          99,
+          311,
+          72,
+          24
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.06098679357553201,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8883101851851852,
+        "median_projection_depth": -0.006804115138947964
+      },
+      {
+        "box": 8,
+        "side": 2,
+        "rect": [
+          286,
+          384,
+          24,
+          11
+        ],
+        "corner_indices": [
+          4,
+          5,
+          1,
+          0
+        ],
+        "area": 0.008789751401165682,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.7083333333333334,
+        "median_projection_depth": -0.004745990037918091
+      },
+      {
+        "box": 8,
+        "side": 3,
+        "rect": [
+          286,
+          403,
+          24,
+          11
+        ],
+        "corner_indices": [
+          2,
+          3,
+          7,
+          6
+        ],
+        "area": 0.008789751401165682,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.553030303030303,
+        "median_projection_depth": -0.007139042019844055
+      },
+      {
+        "box": 8,
+        "side": 4,
+        "rect": [
+          206,
+          384,
+          72,
+          11
+        ],
+        "corner_indices": [
+          0,
+          2,
+          6,
+          4
+        ],
+        "area": 0.027105241589125337,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.773989898989899,
+        "median_projection_depth": -0.008532105013728142
+      },
+      {
+        "box": 8,
+        "side": 5,
+        "rect": [
+          206,
+          403,
+          72,
+          11
+        ],
+        "corner_indices": [
+          5,
+          7,
+          3,
+          1
+        ],
+        "area": 0.027105241589125337,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.7159090909090909,
+        "median_projection_depth": -0.009561091661453247
+      },
+      {
+        "box": 9,
+        "side": 0,
+        "rect": [
+          99,
+          491,
+          22,
+          17
+        ],
+        "corner_indices": [
+          0,
+          1,
+          3,
+          2
+        ],
+        "area": 0.01314089718261583,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9518716577540107,
+        "median_projection_depth": -0.05789193883538246
+      },
+      {
+        "box": 9,
+        "side": 1,
+        "rect": [
+          159,
+          491,
+          22,
+          17
+        ],
+        "corner_indices": [
+          6,
+          7,
+          5,
+          4
+        ],
+        "area": 0.01314089718261583,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9010695187165776,
+        "median_projection_depth": -0.003294029738754034
+      },
+      {
+        "box": 9,
+        "side": 2,
+        "rect": [
+          318,
+          384,
+          22,
+          11
+        ],
+        "corner_indices": [
+          4,
+          5,
+          1,
+          0
+        ],
+        "area": 0.008459320140592742,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9090909090909091,
+        "median_projection_depth": -0.009019499644637108
+      },
+      {
+        "box": 9,
+        "side": 3,
+        "rect": [
+          318,
+          403,
+          22,
+          11
+        ],
+        "corner_indices": [
+          2,
+          3,
+          7,
+          6
+        ],
+        "area": 0.008459320140592742,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.859504132231405,
+        "median_projection_depth": -0.004357710015028715
+      },
+      {
+        "box": 9,
+        "side": 4,
+        "rect": [
+          73,
+          488,
+          17,
+          11
+        ],
+        "corner_indices": [
+          0,
+          2,
+          6,
+          4
+        ],
+        "area": 0.006801117715810464,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.786096256684492,
+        "median_projection_depth": -0.004740680102258921
+      },
+      {
+        "box": 9,
+        "side": 5,
+        "rect": [
+          179,
+          405,
+          17,
+          11
+        ],
+        "corner_indices": [
+          5,
+          7,
+          3,
+          1
+        ],
+        "area": 0.006801117715810464,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8021390374331551,
+        "median_projection_depth": -0.002523798029869795
+      },
+      {
+        "box": 10,
+        "side": 0,
+        "rect": [
+          423,
+          88,
+          76,
+          24
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.06706700257446792,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6759868421052632,
+        "median_projection_depth": -0.02656562253832817
+      },
+      {
+        "box": 10,
+        "side": 1,
+        "rect": [
+          423,
+          120,
+          76,
+          24
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.06706700257446792,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8300438596491229,
+        "median_projection_depth": -0.025147344917058945
+      },
+      {
+        "box": 10,
+        "side": 2,
+        "rect": [
+          99,
+          215,
+          99,
+          24
+        ],
+        "corner_indices": [
+          0,
+          4,
+          5,
+          1
+        ],
+        "area": 0.08707032854779208,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9128787878787878,
+        "median_projection_depth": -0.008028173819184303
+      },
+      {
+        "box": 10,
+        "side": 3,
+        "rect": [
+          99,
+          247,
+          99,
+          24
+        ],
+        "corner_indices": [
+          3,
+          7,
+          6,
+          2
+        ],
+        "area": 0.08707032854779208,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.43602693602693604,
+        "median_projection_depth": -0.009189128875732422
+      },
+      {
+        "box": 10,
+        "side": 4,
+        "rect": [
+          4,
+          4,
+          99,
+          76
+        ],
+        "corner_indices": [
+          2,
+          6,
+          4,
+          0
+        ],
+        "area": 0.2778217648017654,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8907496012759171,
+        "median_projection_depth": -0.005405791103839874
+      },
+      {
+        "box": 10,
+        "side": 5,
+        "rect": [
+          111,
+          4,
+          99,
+          76
+        ],
+        "corner_indices": [
+          1,
+          5,
+          7,
+          3
+        ],
+        "area": 0.2778217648017654,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.030435938330675174,
+        "median_projection_depth": -0.009556981734931469
+      },
+      {
+        "box": 11,
+        "side": 0,
+        "rect": [
+          488,
+          304,
+          13,
+          8
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.003366574919946878,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.875,
+        "median_projection_depth": -0.012295220047235489
+      },
+      {
+        "box": 11,
+        "side": 1,
+        "rect": [
+          488,
+          275,
+          13,
+          8
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.003366574919946878,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8846153846153846,
+        "median_projection_depth": -0.010971708223223686
+      },
+      {
+        "box": 11,
+        "side": 2,
+        "rect": [
+          206,
+          456,
+          13,
+          8
+        ],
+        "corner_indices": [
+          0,
+          4,
+          5,
+          1
+        ],
+        "area": 0.0034273584741362395,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8461538461538461,
+        "median_projection_depth": -0.01478915847837925
+      },
+      {
+        "box": 11,
+        "side": 3,
+        "rect": [
+          206,
+          472,
+          13,
+          8
+        ],
+        "corner_indices": [
+          3,
+          7,
+          6,
+          2
+        ],
+        "area": 0.0034273584741362395,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8846153846153846,
+        "median_projection_depth": -0.00915306806564331
+      },
+      {
+        "box": 11,
+        "side": 4,
+        "rect": [
+          495,
+          185,
+          13,
+          13
+        ],
+        "corner_indices": [
+          2,
+          6,
+          4,
+          0
+        ],
+        "area": 0.005780048616625905,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.7514792899408284,
+        "median_projection_depth": 0.0063334256410598755
+      },
+      {
+        "box": 11,
+        "side": 5,
+        "rect": [
+          495,
+          153,
+          13,
+          13
+        ],
+        "corner_indices": [
+          1,
+          5,
+          7,
+          3
+        ],
+        "area": 0.005780048616625908,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.6923076923076923,
+        "median_projection_depth": -0.007313077803701162
+      },
+      {
+        "box": 12,
+        "side": 0,
+        "rect": [
+          206,
+          422,
+          135,
+          9
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.04234979926234203,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.351440329218107,
+        "median_projection_depth": 0.0023815573658794165
+      },
+      {
+        "box": 12,
+        "side": 1,
+        "rect": [
+          206,
+          439,
+          135,
+          9
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.042349799262342024,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.3135802469135803,
+        "median_projection_depth": 0.02928800880908966
+      },
+      {
+        "box": 12,
+        "side": 2,
+        "rect": [
+          179,
+          279,
+          18,
+          9
+        ],
+        "corner_indices": [
+          0,
+          4,
+          5,
+          1
+        ],
+        "area": 0.005648268099318663,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.5925925925925926,
+        "median_projection_depth": 0.030642082914710045
+      },
+      {
+        "box": 12,
+        "side": 3,
+        "rect": [
+          179,
+          311,
+          18,
+          9
+        ],
+        "corner_indices": [
+          3,
+          7,
+          6,
+          2
+        ],
+        "area": 0.005648268099318664,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.006172839506172839,
+        "median_projection_depth": 0.03388853743672371
+      },
+      {
+        "box": 12,
+        "side": 4,
+        "rect": [
+          206,
+          332,
+          135,
+          18
+        ],
+        "corner_indices": [
+          0,
+          2,
+          6,
+          4
+        ],
+        "area": 0.08970284657825674,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.35720164609053495,
+        "median_projection_depth": -0.0004293471574783325
+      },
+      {
+        "box": 12,
+        "side": 5,
+        "rect": [
+          206,
+          358,
+          135,
+          18
+        ],
+        "corner_indices": [
+          5,
+          7,
+          3,
+          1
+        ],
+        "area": 0.08970284657825672,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.49506172839506174,
+        "median_projection_depth": -0.0344567745923996
+      },
+      {
+        "box": 13,
+        "side": 0,
+        "rect": [
+          188,
+          463,
+          10,
+          10
+        ],
+        "corner_indices": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "area": 0.0031591502982657054,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8,
+        "median_projection_depth": -0.03388459235429764
+      },
+      {
+        "box": 13,
+        "side": 1,
+        "rect": [
+          130,
+          491,
+          10,
+          10
+        ],
+        "corner_indices": [
+          4,
+          6,
+          7,
+          5
+        ],
+        "area": 0.0031591502982657054,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.79,
+        "median_projection_depth": -0.004884658381342888
+      },
+      {
+        "box": 13,
+        "side": 2,
+        "rect": [
+          179,
+          296,
+          10,
+          7
+        ],
+        "corner_indices": [
+          4,
+          5,
+          1,
+          0
+        ],
+        "area": 0.002243073895920449,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9571428571428572,
+        "median_projection_depth": -0.0051228925585746765
+      },
+      {
+        "box": 13,
+        "side": 3,
+        "rect": [
+          179,
+          328,
+          10,
+          7
+        ],
+        "corner_indices": [
+          2,
+          3,
+          7,
+          6
+        ],
+        "area": 0.002243073895920449,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.9428571428571428,
+        "median_projection_depth": -0.007667043711990118
+      },
+      {
+        "box": 13,
+        "side": 4,
+        "rect": [
+          206,
+          488,
+          10,
+          7
+        ],
+        "corner_indices": [
+          0,
+          2,
+          6,
+          4
+        ],
+        "area": 0.0023446627773081744,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8285714285714286,
+        "median_projection_depth": -0.0016385081689804792
+      },
+      {
+        "box": 13,
+        "side": 5,
+        "rect": [
+          227,
+          456,
+          10,
+          7
+        ],
+        "corner_indices": [
+          5,
+          7,
+          3,
+          1
+        ],
+        "area": 0.0023446627773081744,
+        "hidden_in_all_prefixes": false,
+        "projected_fraction": 0.8285714285714286,
+        "median_projection_depth": -0.006056786980479956
+      }
+    ],
+    "seconds": 8.24134189193137
+  },
+  "source_unchanged": true,
+  "texture_geometry_unchanged": true,
+  "seconds": 46.02276493515819
+}

@@ -1,0 +1,1871 @@
+[
+  {
+    "case": "cube",
+    "variant": "regions",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 1,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4104,
+      "estimated_exposed_area": 6.0,
+      "estimated_hidden_area_fraction": 0.0,
+      "source_to_surface_p95": 0.0,
+      "source_to_surface_rms": 0.0,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.020620009789188796,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 1.0,
+    "seconds": 3.591132542816922,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.1989595489576459
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 0.7459617760032415
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.6417744951322675
+      }
+    ]
+  },
+  {
+    "case": "cube",
+    "variant": "no_barriers",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": false
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 1,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4104,
+      "estimated_exposed_area": 6.0,
+      "estimated_hidden_area_fraction": 0.0,
+      "source_to_surface_p95": 0.0,
+      "source_to_surface_rms": 0.0,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.020620009789188796,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 1.0,
+    "seconds": 3.277917861007154,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.08510246593505144
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 0.6385457499418408
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.550183830084279
+      }
+    ]
+  },
+  {
+    "case": "cube",
+    "variant": "pca",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "pca",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 1,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4104,
+      "estimated_exposed_area": 6.0,
+      "estimated_hidden_area_fraction": 0.0,
+      "source_to_surface_p95": 0.0,
+      "source_to_surface_rms": 0.0,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.020620009789188796,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 1.0,
+    "seconds": 3.2599831051193178,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.10151449404656887
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 0.7448464399203658
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.4093466110061854
+      }
+    ]
+  },
+  {
+    "case": "rotated_box",
+    "variant": "regions",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 1,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4104,
+      "estimated_exposed_area": 2.583899058558854,
+      "estimated_hidden_area_fraction": 0.0,
+      "source_to_surface_p95": 0.0369840747932818,
+      "source_to_surface_rms": 0.014701341283728152,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.023213748496776737,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.61534654999279,
+    "seconds": 2.2832180061377585,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.14271072996780276
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 1.313838992966339
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 0.8213129120413214
+      }
+    ]
+  },
+  {
+    "case": "rotated_box",
+    "variant": "no_barriers",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": false
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 1,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4104,
+      "estimated_exposed_area": 2.583899058558854,
+      "estimated_hidden_area_fraction": 0.0,
+      "source_to_surface_p95": 0.0369840747932818,
+      "source_to_surface_rms": 0.014701341283728152,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.023213748496776737,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.61534654999279,
+    "seconds": 1.9877599109895527,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.09119822597131133
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 1.243151546921581
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 0.6471509428229183
+      }
+    ]
+  },
+  {
+    "case": "rotated_box",
+    "variant": "pca",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "pca",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 1,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4104,
+      "estimated_exposed_area": 2.583899058558854,
+      "estimated_hidden_area_fraction": 0.0,
+      "source_to_surface_p95": 0.0369840747932818,
+      "source_to_surface_rms": 0.014701341283728152,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.023213748496776737,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.61534654999279,
+    "seconds": 1.933567280182615,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.06943586794659495
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 1.1940533930901438
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 0.6663619340397418
+      }
+    ]
+  },
+  {
+    "case": "l_shape",
+    "variant": "regions",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 2,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4110,
+      "estimated_exposed_area": 13.999999999999996,
+      "estimated_hidden_area_fraction": 0.30000000000000016,
+      "source_to_surface_p95": 0.0,
+      "source_to_surface_rms": 2.0611174425769438e-17,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.01640882715486919,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9097645211930926,
+    "seconds": 5.874539695912972,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.20057954592630267
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 3.550488534849137
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.1188896470703185
+      }
+    ]
+  },
+  {
+    "case": "l_shape",
+    "variant": "no_barriers",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": false
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 2,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4110,
+      "estimated_exposed_area": 13.999999999999996,
+      "estimated_hidden_area_fraction": 0.30000000000000016,
+      "source_to_surface_p95": 0.0,
+      "source_to_surface_rms": 2.0611174425769438e-17,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.01640882715486919,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9097645211930926,
+    "seconds": 5.720027565024793,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.12161385780200362
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 3.50190495303832
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.0906297280453146
+      }
+    ]
+  },
+  {
+    "case": "l_shape",
+    "variant": "pca",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "pca",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 2,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4110,
+      "estimated_exposed_area": 13.999999999999996,
+      "estimated_hidden_area_fraction": 0.30000000000000016,
+      "source_to_surface_p95": 0.0,
+      "source_to_surface_rms": 2.0611174425769438e-17,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.01640882715486919,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9097645211930926,
+    "seconds": 6.00814283802174,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.14273452782072127
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 3.625074360985309
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.2342971379403025
+      }
+    ]
+  },
+  {
+    "case": "thin_appendage",
+    "variant": "regions",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 3,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4137,
+      "estimated_exposed_area": 6.55452079694223,
+      "estimated_hidden_area_fraction": 0.07419211446163765,
+      "source_to_surface_p95": 0.02052856152865759,
+      "source_to_surface_rms": 0.01067961291664412,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.02068241096625375,
+      "surface_supported_area_fraction": 0.9986420265858642,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9367822444221965,
+    "seconds": 6.182941952953115,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.2109791429247707
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 3.1678736829198897
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.797437286004424
+      }
+    ]
+  },
+  {
+    "case": "thin_appendage",
+    "variant": "no_barriers",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": false
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 3,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4137,
+      "estimated_exposed_area": 6.55452079694223,
+      "estimated_hidden_area_fraction": 0.07419211446163765,
+      "source_to_surface_p95": 0.02052856152865759,
+      "source_to_surface_rms": 0.01067961291664412,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.02068241096625375,
+      "surface_supported_area_fraction": 0.9986420265858642,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9367822444221965,
+    "seconds": 5.451786129968241,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.15358580206520855
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 3.26843842305243
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.025085448054597
+      }
+    ]
+  },
+  {
+    "case": "thin_appendage",
+    "variant": "pca",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "solid",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "pca",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 2,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4116,
+      "estimated_exposed_area": 6.5440919685301004,
+      "estimated_hidden_area_fraction": 0.06429336156455612,
+      "source_to_surface_p95": 0.02089422454081464,
+      "source_to_surface_rms": 0.010378231218857588,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.020640413848660562,
+      "surface_supported_area_fraction": 0.9982644712090555,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9310745905954587,
+    "seconds": 5.520024768076837,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.11334976903162897
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 3.417397751007229
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 1.9851635098457336
+      }
+    ]
+  },
+  {
+    "case": "hollow_shell",
+    "variant": "regions",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "surface",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 16,
+    "raw_coverage": 0.9995836802664446,
+    "spatial_coverage": 0.9995888157894737,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 6958,
+      "estimated_exposed_area": 10.986557456004219,
+      "estimated_hidden_area_fraction": 0.02473807868922484,
+      "source_to_surface_p95": 0.08076600971580417,
+      "source_to_surface_rms": 0.03493602588199282,
+      "source_surface_coverage": 0.9995888157894737,
+      "surface_to_source_rms": 0.04296961462891598,
+      "surface_supported_area_fraction": 0.9864567381055532,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9743074092440429,
+    "seconds": 11.761327676009387,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.14110914198681712
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 8.956599764991552
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.658571420935914
+      }
+    ]
+  },
+  {
+    "case": "hollow_shell",
+    "variant": "no_barriers",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "surface",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": false
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 16,
+    "raw_coverage": 0.9995836802664446,
+    "spatial_coverage": 0.9995888157894737,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 6958,
+      "estimated_exposed_area": 10.986557456004219,
+      "estimated_hidden_area_fraction": 0.02473807868922484,
+      "source_to_surface_p95": 0.08076600971580417,
+      "source_to_surface_rms": 0.03493602588199282,
+      "source_surface_coverage": 0.9995888157894737,
+      "surface_to_source_rms": 0.04296961462891598,
+      "surface_supported_area_fraction": 0.9864567381055532,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9743074092440429,
+    "seconds": 12.27977936482057,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.09741997881792486
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 9.308305260026827
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.867777143139392
+      }
+    ]
+  },
+  {
+    "case": "hollow_shell",
+    "variant": "pca",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "surface",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "pca",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 16,
+    "raw_coverage": 0.9995836802664446,
+    "spatial_coverage": 0.9995888157894737,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 6958,
+      "estimated_exposed_area": 10.986557456004219,
+      "estimated_hidden_area_fraction": 0.02473807868922484,
+      "source_to_surface_p95": 0.08076600971580417,
+      "source_to_surface_rms": 0.03493602588199282,
+      "source_surface_coverage": 0.9995888157894737,
+      "surface_to_source_rms": 0.04296961462891598,
+      "surface_supported_area_fraction": 0.9864567381055532,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9743074092440429,
+    "seconds": 11.435886329971254,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.062368450220674276
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 8.684030241100118
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 2.684566522948444
+      }
+    ]
+  },
+  {
+    "case": "close_layers",
+    "variant": "regions",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "surface",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 1,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4100,
+      "estimated_exposed_area": 1.9829111531190937,
+      "estimated_hidden_area_fraction": 0.0,
+      "source_to_surface_p95": 0.04347826086956519,
+      "source_to_surface_rms": 0.012551092808470117,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.01772398756273601,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9228187919463087,
+    "seconds": 3.5129478101152927,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.04881372209638357
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 0.3711538689676672
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 3.0889400099404156
+      }
+    ]
+  },
+  {
+    "case": "close_layers",
+    "variant": "no_barriers",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "surface",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": false
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 1,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4100,
+      "estimated_exposed_area": 1.9829111531190937,
+      "estimated_hidden_area_fraction": 0.0,
+      "source_to_surface_p95": 0.04347826086956519,
+      "source_to_surface_rms": 0.012551092808470117,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.01772398756273601,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9228187919463087,
+    "seconds": 3.568374719005078,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.04591295402497053
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 0.3519290331751108
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 3.1662705519702286
+      }
+    ]
+  },
+  {
+    "case": "close_layers",
+    "variant": "pca",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "surface",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "pca",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 1,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4100,
+      "estimated_exposed_area": 1.9829111531190937,
+      "estimated_hidden_area_fraction": 0.0,
+      "source_to_surface_p95": 0.04347826086956519,
+      "source_to_surface_rms": 0.012551092808470117,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.01772398756273601,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9228187919463087,
+    "seconds": 3.6084280251525342,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.038642290979623795
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 0.33371647517196834
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 3.232047833967954
+      }
+    ]
+  },
+  {
+    "case": "mixed_density",
+    "variant": "regions",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "surface",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 2,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4108,
+      "estimated_exposed_area": 4.489404353405323,
+      "estimated_hidden_area_fraction": 4.440892098500626e-16,
+      "source_to_surface_p95": 1.019021739132736e-06,
+      "source_to_surface_rms": 9.68405798681334e-07,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.05252326659703574,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9254163787918633,
+    "seconds": 1.9535704490263015,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.038406091975048184
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 0.7280341170262545
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 1.182201725197956
+      }
+    ]
+  },
+  {
+    "case": "mixed_density",
+    "variant": "no_barriers",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "surface",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "regions",
+      "edge_barriers": false
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 2,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4108,
+      "estimated_exposed_area": 4.489404353405323,
+      "estimated_hidden_area_fraction": 4.440892098500626e-16,
+      "source_to_surface_p95": 1.019021739132736e-06,
+      "source_to_surface_rms": 9.68405798681334e-07,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.05252326659703574,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9254163787918633,
+    "seconds": 1.813198212068528,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.03431967692449689
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 0.6535962279886007
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 1.1208501690998673
+      }
+    ]
+  },
+  {
+    "case": "mixed_density",
+    "variant": "pca",
+    "exit_code": 0,
+    "config": {
+      "target_coverage": 0.999,
+      "max_cuboids": 16,
+      "max_points": 6000,
+      "resolution": 48,
+      "normal_angle": 30.0,
+      "min_opacity": 0.1,
+      "approximation_distance_factor": 2.0,
+      "point_tolerance_factor": 2.0,
+      "exterior_penalty": 2.0,
+      "max_frames": 8,
+      "seeds_per_frame": 8,
+      "seed": 42,
+      "atlas_size": 512,
+      "point_tolerance": null,
+      "reconstruction_mode": "surface",
+      "max_memory_mb": 2048,
+      "outlier_distance_factor": 50.0,
+      "source_up": "-y",
+      "units_per_meter": 1.0,
+      "target_surface_support": 0.95,
+      "color_space": "srgb",
+      "orientation_mode": "pca",
+      "edge_barriers": true
+    },
+    "environment": {
+      "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+      "dependencies": {
+        "numpy": "2.3.5",
+        "scipy": "1.16.3",
+        "plyfile": "1.1.5",
+        "Pillow": "12.1.1"
+      }
+    },
+    "implementation_sha256": {
+      "__init__.py": "674ce2927a9274dfb5727872f18744bbd79e0e3350a6514eeaaa5349f186f101",
+      "__main__.py": "7a7beaaa82a6df0b77f113ee66bd9538f96a5a3e21edbe23afc42e43b494cc0c",
+      "approximation.py": "a80efaa7bd0db320870fadfc061ce080ab2cf89d5b00f7d8674d0d65e1676156",
+      "barriers.py": "aef67a6884fa1f30453e04cc05c4c69ca56a689fefe2f4fe36d4646b24337a11",
+      "checkpoint.py": "aa846686476ed44d2518035a74bec3b45102977278b796379459db6b5864302e",
+      "cloud.py": "77ae994bfb93344623df7aabb82813465a487e1c09eefba9748df1985b163eb7",
+      "cuboids.py": "9c5391f030fb6638f579e4fb515572ae4c777f86e0769a7bda9c411b07859ed5",
+      "fitting.py": "cd583c1065f770d184abd09514d77d55f9693a909b71a23bcfae4c0ffc98d40e",
+      "geometry.py": "df56ab935c906d1db0a325a6d7682267270649d0cf926a32d705493df092406a",
+      "pipeline.py": "f179cafd0e07b53698326218a242f181df4f8982e3724295808f8aa922bb0a94",
+      "regions.py": "675601ddb9b8e747c2c9b63a748c0b5eef01fde0a90e6fa56f8e6e85c305ddf9",
+      "texture.py": "3ccea26a6e56b1dc0ec5738d750f605193b8a17dd8d5fb44fa12619c4315392b",
+      "viewer_template.html": "aaa55e27ccbfbb4c8a32fe1818bbf2be08734f8bbdfa9fddc3f3efcc9c35882b",
+      "volume.py": "d5cd91ba2148056981264db230106b431688ef5164a1dfea435e1dfff3749d43"
+    },
+    "cuboids": 2,
+    "raw_coverage": 1.0,
+    "spatial_coverage": 1.0,
+    "surface": {
+      "method": "Clipped union boundary; continuous point-to-triangle distances and area quadrature",
+      "exposed_samples": 4108,
+      "estimated_exposed_area": 4.489404353405323,
+      "estimated_hidden_area_fraction": 4.440892098500626e-16,
+      "source_to_surface_p95": 1.019021739132736e-06,
+      "source_to_surface_rms": 9.68405798681334e-07,
+      "source_surface_coverage": 1.0,
+      "surface_to_source_rms": 0.05252326659703574,
+      "surface_supported_area_fraction": 1.0,
+      "sampling_note": "Source distances use continuous triangles. Reverse distances are area samples; no Hausdorff guarantee."
+    },
+    "texture_support": 0.9254163787918633,
+    "seconds": 1.6091707199811935,
+    "stages": [
+      {
+        "name": "Load PLY, estimate normals and segment regions",
+        "status": "complete",
+        "seconds": 0.02390769892372191
+      },
+      {
+        "name": "Append and certify cuboids",
+        "status": "complete",
+        "seconds": 0.545042535988614
+      },
+      {
+        "name": "Project colors and export the model",
+        "status": "complete",
+        "seconds": 1.0360337428282946
+      }
+    ]
+  }
+]

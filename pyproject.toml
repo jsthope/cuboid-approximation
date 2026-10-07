@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cuboid-approximation"
+version = "0.4.0"
+description = "Incremental, bounded cuboid approximation and texture projection from PLY point clouds."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "numpy>=1.26,<3",
+    "scipy>=1.11,<2",
+    "plyfile>=1.0,<2",
+    "Pillow>=10,<13",
+]
+
+[project.optional-dependencies]
+docs = ["matplotlib>=3.8,<4"]
+validation = ["playwright>=1.40,<2"]
+
+[project.scripts]
+cuboid-approximate = "cuboid_approximation.pipeline:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+cuboid_approximation = ["viewer_template.html"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]

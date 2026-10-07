@@ -1,0 +1,5 @@
+# Versions used for the bundled example (Python 3.10).
+numpy==1.26.4
+scipy==1.15.3
+plyfile==1.0.3
+Pillow==12.3.0
