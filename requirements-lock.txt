@@ -3,3 +3,4 @@ numpy==1.26.4
 scipy==1.15.3
 plyfile==1.0.3
 Pillow==12.3.0
+threadpoolctl==3.7.0

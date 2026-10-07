@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import base64
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 from pathlib import Path
@@ -13,6 +15,7 @@ import numpy as np
 from PIL import Image
 from scipy.spatial import cKDTree
 from scipy.spatial.transform import Rotation
+from threadpoolctl import threadpool_limits
 
 from .geometry import BOX_QUADS as QUADS, CORNER_SIGNS as SIGNS, _split
 
@@ -392,6 +395,43 @@ def load_cloud(ply_path, preparation_dir, loaded=None, color_space="srgb"):
     )
 
 
+def _projection_bounds(cloud, scales):
+    """Bounds shared by every face; compute once for a complete model bake."""
+    # A covariance can be much wider than the local point spacing. The trace
+    # bounds every directional variance, including rotated anisotropic splats.
+    # Reduce in blocks to keep the broad phase's temporary memory bounded.
+    margin = largest_scale = 0.0
+    for start in range(0, len(scales), 65536):
+        local_scale = scales[start : start + 65536]
+        variance = np.trace(cloud["covariance"][start : start + 65536], axis1=1, axis2=2)
+        footprint = 3 * np.sqrt(np.maximum(variance, 0) + (0.45 * local_scale) ** 2)
+        margin = max(margin, float(np.max(np.maximum(footprint, 4 * local_scale))))
+        largest_scale = max(largest_scale, float(local_scale.max()))
+    return margin, largest_scale
+
+
+def _ordered_face_results(function, faces, workers):
+    """Evaluate independently, preserving atlas order and bounding queued results."""
+    if workers == 1:
+        yield from map(function, faces)
+        return
+    iterator = iter(faces)
+    with threadpool_limits(limits=1, user_api="blas"), ThreadPoolExecutor(
+        max_workers=workers, thread_name_prefix="texture"
+    ) as executor:
+        pending = deque()
+        for _ in range(2 * workers):
+            item = next(iterator, None)
+            if item is None:
+                break
+            pending.append(executor.submit(function, item))
+        while pending:
+            yield pending.popleft().result()
+            item = next(iterator, None)
+            if item is not None:
+                pending.append(executor.submit(function, item))
+
+
 def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0,
               *, donor_mask=None, outward=False, return_colored=False):
     """Bake nearest layers, or a thin slab's outer skin with model-scoped donors."""
@@ -410,16 +450,8 @@ def bake_face(face, width, height, cloud, max_depth, backward_depth=0.0,
     gray = float(srgb_to_linear(0.65))
     origin, u, v, normal = [face[k] for k in ("origin", "u", "v", "normal")]
     center = origin + 0.5 * face["width"] * u + 0.5 * face["height"] * v
-    # A covariance can be much wider than the local point spacing. The trace
-    # bounds every directional variance, including rotated anisotropic splats.
-    # Reduce in blocks to keep the broad phase's temporary memory bounded.
-    margin = largest_scale = 0.0
-    for start in range(0, len(points), 65536):
-        local_scale = scales[start : start + 65536]
-        variance = np.trace(cloud["covariance"][start : start + 65536], axis1=1, axis2=2)
-        footprint = 3 * np.sqrt(np.maximum(variance, 0) + (0.45 * local_scale) ** 2)
-        margin = max(margin, float(np.max(np.maximum(footprint, 4 * local_scale))))
-        largest_scale = max(largest_scale, float(local_scale.max()))
+    bounds = cloud.get("_projection_bounds")
+    margin, largest_scale = _projection_bounds(cloud, scales) if bounds is None else bounds
     radius = np.sqrt(
         (face["width"] / 2 + margin) ** 2
         + (face["height"] / 2 + margin) ** 2
@@ -971,7 +1003,10 @@ def bake_model(
     source_up="-y",
     units_per_meter=1.0,
     color_space="srgb",
+    workers=1,
 ):
+    if not isinstance(workers, int) or isinstance(workers, bool) or workers < 1:
+        raise ValueError("workers must be a positive integer")
     if not 256 <= atlas_size <= 8192:
         raise ValueError("atlas_size must be between 256 and 8192")
     started = time.perf_counter()
@@ -1003,7 +1038,8 @@ def bake_model(
         )
     rects, density = pack_atlas(faces, atlas_size)
     print("Loading PLY colors and projection attributes...", flush=True)
-    cloud = load_cloud(ply_path, preparation_dir, loaded=loaded, color_space=color_space)
+    cloud = dict(load_cloud(ply_path, preparation_dir, loaded=loaded, color_space=color_space))
+    cloud["_projection_bounds"] = _projection_bounds(cloud, cloud["spacing_per_point"])
     from .geometry import box_surface_distance
 
     # Scope thin-slab outward rays to this part: another nearby cuboid must not donate
@@ -1025,19 +1061,28 @@ def bake_model(
     metadata = []
     tiles, color_masks = [], []
     pad = 4
-    donor_box = None
-    for i, (face, rect) in enumerate(zip(faces, rects)):
+    workers = min(workers, sum(not face["hidden"] for face in faces) or 1)
+    outward_faces = [
+        bool(float(boxes[face["box"]]["dimensions"] @ np.abs(
+            boxes[face["box"]]["rotation"].T @ face["normal"]
+        )) <= 0.25 * min(face["width"], face["height"]))
+        for face in faces
+    ]
+    # Only broad slab faces use ownership. Share these immutable masks among
+    # workers instead of recomputing distances for every box/face.
+    donor_masks = {
+        index: box_surface_distance(cloud["points"], boxes[index]) <= (
+            nearest_box + 0.75 * cloud["spacing_per_point"]
+        )
+        for index in {face["box"] for face, outward in zip(faces, outward_faces)
+                      if outward and not face["hidden"]}
+    }
+
+    def bake_one(i):
+        face, rect, outward = faces[i], rects[i], outward_faces[i]
         x, y, w, h = rect
-        box = boxes[face["box"]]
-        thickness = float(box["dimensions"] @ np.abs(box["rotation"].T @ face["normal"]))
         # On broad faces of thin slabs, the fit may cross the reverse skin.
         # Thick parts keep their local nearest-surface projection.
-        outward = bool(thickness <= 0.25 * min(face["width"], face["height"]))
-        if donor_box != face["box"]:
-            donor_box = face["box"]
-            donor_mask = box_surface_distance(cloud["points"], boxes[donor_box]) <= (
-                nearest_box + 0.75 * cloud["spacing_per_point"]
-            )
         if face["hidden"]:
             rgb = np.full((h, w, 3), 0.65)
             supported, depths = np.zeros((h, w), bool), np.full(h * w, np.nan)
@@ -1045,7 +1090,8 @@ def bake_model(
         else:
             rgb, supported, depths, colored = bake_face(
                 face, w, h, cloud, max_depth, backward_depth,
-                donor_mask=donor_mask if outward else None, outward=outward, return_colored=True,
+                donor_mask=donor_masks[face["box"]] if outward else None,
+                outward=outward, return_colored=True,
             )
             if outward and not colored.all():
                 # Preserve a bounded nearest-color estimate where this slab
@@ -1058,28 +1104,33 @@ def bake_model(
         visible = face_pixel_mask(face, polygons[i], w, h)
         visible_support = supported & visible
         tile = np.rint(np.clip(rgb, 0, 1) * 255).astype(np.uint8)
-        tiles.append(tile)
-        color_masks.append(colored)
         quality = np.where(
             supported[:, :, None], np.array([51, 188, 147]), np.array([240, 145, 62])
         ).astype(np.uint8)
+        detail = dict(
+            box=face["box"] + 1,
+            side=face["side"],
+            rect=list(rect),
+            corner_indices=face["indices"].tolist(),
+            area=sum(polygon_area(poly) for poly in polygons[i]),
+            unclipped_area=face["width"] * face["height"],
+            hidden_in_all_prefixes=face["hidden"],
+            outward_layer_order=outward,
+            projected_fraction=float(supported[visible].mean()) if visible.any() else 0.0,
+            median_projection_depth=float(np.nanmedian(depths[visible_support.ravel()]))
+            if visible_support.any() else None,
+        )
+        return tile, colored, quality, detail
+
+    for i, (tile, colored, quality, detail) in enumerate(
+        _ordered_face_results(bake_one, range(len(faces)), workers)
+    ):
+        x, y, w, h = rects[i]
+        tiles.append(tile)
+        color_masks.append(colored)
+        metadata.append(detail)
         confidence[y - pad : y + h + pad, x - pad : x + w + pad] = np.pad(
             quality, ((pad, pad), (pad, pad), (0, 0)), mode="edge"
-        )
-        metadata.append(
-            dict(
-                box=face["box"] + 1,
-                side=face["side"],
-                rect=list(rect),
-                corner_indices=face["indices"].tolist(),
-                area=sum(polygon_area(poly) for poly in polygons[i]),
-                unclipped_area=face["width"] * face["height"],
-                hidden_in_all_prefixes=face["hidden"],
-                outward_layer_order=outward,
-                projected_fraction=float(supported[visible].mean()) if visible.any() else 0.0,
-                median_projection_depth=float(np.nanmedian(depths[visible_support.ravel()]))
-                if visible_support.any() else None,
-            )
         )
         if (i + 1) % 12 == 0:
             print(f"Baked {i + 1}/{len(faces)} faces", flush=True)
@@ -1101,6 +1152,7 @@ def bake_model(
         raise RuntimeError("Cuboid parameters changed during texture baking.")
     report = dict(
         cuboids=len(params["centers"]),
+        workers=workers,
         faces=len(faces),
         triangles=sum(len(poly) - 2 for fragments in polygons for poly in fragments),
         atlas_size=[atlas_size] * 2,

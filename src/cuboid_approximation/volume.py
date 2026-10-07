@@ -6,6 +6,8 @@ from scipy import ndimage as ndi
 from scipy.spatial import cKDTree
 from scipy.spatial.transform import Rotation
 
+from .parallel import current_workers
+
 
 class CoverageNotReachedError(RuntimeError):
     """A completed geometric stage cannot satisfy the requested point target."""
@@ -17,7 +19,7 @@ class CoverageNotReachedError(RuntimeError):
 
 def center_spacing(points, h):
     points = np.unique(points, axis=0)
-    distances, _ = cKDTree(points).query(points, k=min(2, len(points)), workers=-1)
+    distances, _ = cKDTree(points).query(points, k=min(2, len(points)), workers=current_workers())
     positive = distances[:, 1][distances[:, 1] > 0] if len(points) > 1 else np.empty(0)
     return float(np.median(positive)) if len(positive) else h
 

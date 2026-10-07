@@ -1,9 +1,13 @@
 """PLY input and spatially sampled local normal estimation."""
 
+from concurrent.futures import ThreadPoolExecutor
+
 import numpy as np
 from plyfile import PlyData, PlyElement
 from scipy.special import expit
 from scipy.spatial import cKDTree
+
+from .parallel import current_workers, worker_count
 
 
 def load_points(path, min_opacity=0.1, outlier_distance_factor=50.0):
@@ -46,18 +50,26 @@ def load_points(path, min_opacity=0.1, outlier_distance_factor=50.0):
         color_source = "neutral_gray_no_source_color"
     colors = np.clip(np.nan_to_num(colors, nan=0.65, posinf=1, neginf=0), 0, 1)
     rejected = np.empty(0, dtype=int)
+    spacing_cache = None
     if outlier_distance_factor and valid.sum() >= 20:
         ids = np.flatnonzero(valid)
-        distinct, inverse = np.unique(points[ids], axis=0, return_inverse=True)
+        distinct, first, inverse = np.unique(
+            points[ids], axis=0, return_index=True, return_inverse=True
+        )
         if len(distinct) >= 20:
             distances, neighbors = cKDTree(distinct).query(
-                distinct, k=min(9, len(distinct)), workers=-1
+                distinct, k=min(9, len(distinct)), workers=current_workers()
             )
             local = distances[:, 3]
             neighborhood_scale = np.median(local[neighbors[:, 1:]], axis=1)
             isolated = local > outlier_distance_factor * neighborhood_scale
             rejected = ids[isolated[inverse]]
             valid[rejected] = False
+            if not len(rejected):
+                # The outlier query already computed exact distinct-point
+                # nearest distances. Reuse only for the identical population;
+                # removing even one point can change a retained neighbor.
+                spacing_cache = (distinct, first, inverse, distances[:, 1].copy())
     splats = None
     if shape_fields <= names:
         splats = dict(
@@ -69,16 +81,23 @@ def load_points(path, min_opacity=0.1, outlier_distance_factor=50.0):
             ),
         )
     retained = points[valid]
-    distinct, first, inverse = np.unique(retained, axis=0, return_index=True, return_inverse=True)
+    if spacing_cache is None:
+        distinct, first, inverse = np.unique(
+            retained, axis=0, return_index=True, return_inverse=True
+        )
+    else:
+        distinct, first, inverse, nearest_distances = spacing_cache
     if len(distinct) < 20:
         raise ValueError("At least 20 distinct retained points are required.")
-    distances, _ = cKDTree(distinct).query(distinct, k=2, workers=-1)
-    spacing = float(np.median(distances[:, 1]))
+    if spacing_cache is None:
+        distances, _ = cKDTree(distinct).query(distinct, k=2, workers=current_workers())
+        nearest_distances = distances[:, 1]
+    spacing = float(np.median(nearest_distances))
     return dict(
         points=retained,
         distinct_indices=np.sort(first),
         spacing=spacing,
-        spacing_per_point=distances[inverse, 1],
+        spacing_per_point=nearest_distances[inverse],
         colors=colors[valid],
         source_indices=np.flatnonzero(valid),
         source_count=len(points),
@@ -194,11 +213,11 @@ def local_point_spacing(points, fallback=None):
         if fallback is None or not np.isfinite(fallback) or fallback <= 0:
             raise ValueError("At least two distinct points are required for local spacing.")
         return np.full(len(points), fallback, dtype=float)
-    distances, _ = cKDTree(distinct).query(distinct, k=2, workers=-1)
+    distances, _ = cKDTree(distinct).query(distinct, k=2, workers=current_workers())
     return distances[inverse, 1]
 
 
-def local_geometry(points, neighbors=30, radius_factor=6.0):
+def local_geometry(points, neighbors=30, radius_factor=6.0, *, workers=1):
     """Locally radius-bounded, duplicate-invariant PCA with unsigned normals."""
     points = np.asarray(points, dtype=np.float64)
     if points.ndim != 2 or points.shape[1] != 3 or not np.isfinite(points).all():
@@ -206,8 +225,9 @@ def local_geometry(points, neighbors=30, radius_factor=6.0):
     distinct, first, inverse = np.unique(points, axis=0, return_index=True, return_inverse=True)
     if len(distinct) < 3:
         raise ValueError("At least three distinct points are required for normals.")
+    workers = worker_count(workers)
     tree = cKDTree(distinct)
-    distances, ids = tree.query(distinct, k=min(neighbors + 1, len(distinct)), workers=-1)
+    distances, ids = tree.query(distinct, k=min(neighbors + 1, len(distinct)), workers=workers)
     scales = distances[:, 1]
     spacing = float(np.median(scales))
     radius = radius_factor * scales
@@ -220,7 +240,8 @@ def local_geometry(points, neighbors=30, radius_factor=6.0):
     counts = valid_neighbors.sum(axis=1)
     normals = np.zeros_like(distinct)
     eigenvalues = np.zeros_like(distinct)
-    for start in range(0, len(distinct), 2048):
+
+    def estimate(start):
         part = slice(start, start + 2048)
         delta = (distinct[ids[part]] - distinct[part, None]) / scales[part, None, None]
         delta *= valid_neighbors[part, :, None]
@@ -229,8 +250,19 @@ def local_geometry(points, neighbors=30, radius_factor=6.0):
         cov = np.einsum("nki,nkj->nij", delta, delta) / total[:, None, None]
         cov -= np.einsum("ni,nj->nij", mean, mean)
         values, vectors = np.linalg.eigh(cov)
+        # Independent chunks write disjoint output slices. All reductions keep
+        # the serial point/neighborhood order, including ambiguous eigenvectors.
         eigenvalues[part] = np.maximum(values, 0)  # Ascending: smallest first.
         normals[part] = vectors[:, :, 0]
+
+    starts = range(0, len(distinct), 2048)
+    if workers > 1 and len(starts) >= 4:
+        with ThreadPoolExecutor(max_workers=min(workers, len(starts))) as executor:
+            for _ in executor.map(estimate, starts):
+                pass
+    else:
+        for start in starts:
+            estimate(start)
     trace = eigenvalues.sum(axis=1)
     valid = (counts >= 8) & (trace > 0) & (eigenvalues[:, 1] > trace * 1e-5)
     valid &= eigenvalues[:, 0] <= 0.3 * eigenvalues[:, 1]

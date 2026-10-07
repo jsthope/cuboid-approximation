@@ -1,15 +1,21 @@
 """Quality regression corpus through the CLI; --exploratory records unmet contracts."""
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
+import time
 
 import numpy as np
 from PIL import Image
 from scipy.spatial.transform import Rotation
 
 from cuboid_approximation.cloud import write_points
+from cuboid_approximation.parallel import available_cpus
 from cuboid_approximation.pipeline import main as run_pipeline
 
 
@@ -292,6 +298,85 @@ def quality_failures(case, code, report, metrics):
     return failures
 
 
+def execute_job(job, isolated=False):
+    """Run one independent case; subprocesses isolate state and native thread pools."""
+    case, variant, command, output = job
+    if isolated:
+        environment = os.environ.copy()
+        for variable in (
+            "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+            "VECLIB_MAXIMUM_THREADS", "NUMEXPR_NUM_THREADS", "BLIS_NUM_THREADS",
+        ):
+            environment[variable] = "1"
+        log = output.with_suffix(".log")
+        with log.open("w") as stream:
+            code = subprocess.run(
+                [sys.executable, "-m", "cuboid_approximation", *command, "--workers", "1"],
+                env=environment, stdout=stream, stderr=subprocess.STDOUT, check=False,
+            ).returncode
+    else:
+        code = run_pipeline(command)
+    if code not in (0, 3):
+        detail = f"; see {log}" if isolated else ""
+        raise RuntimeError(
+            f"Benchmark execution failed: {case.name}/{variant}, exit {code}{detail}"
+        )
+    report = json.loads((output / "report.json").read_text())
+    geometry = report.get("geometry", {})
+    metrics = analytic_checks(case, output) if geometry.get("cuboids", 0) else {}
+    failures = quality_failures(case, code, report, metrics)
+    return dict(
+        case=case.name,
+        variant=variant,
+        exit_code=code,
+        quality_passed=not failures,
+        failures=failures,
+        expectation=case.expectation,
+        physical_tolerance=case.tolerance,
+        analytic=metrics,
+        config=report["config"],
+        environment=report["environment"],
+        implementation_sha256=report["implementation_sha256"],
+        cuboids=geometry.get("cuboids", 0),
+        raw_coverage=geometry.get("full_cloud_proximity"),
+        spatial_coverage=geometry.get("approximation", {}).get("spatial_coverage"),
+        surface=geometry.get("approximation", {}).get("surface"),
+        texture_support=report.get("texture", {}).get("supported_area_fraction"),
+        seconds=report.get("seconds"),
+        stages=report.get("stages"),
+    )
+
+
+def execute_jobs(jobs, workers, output):
+    """Persist completed cases in corpus order, regardless of completion order."""
+    completed = {}
+
+    def record(index, result):
+        completed[index] = result
+        records = [completed[key] for key in sorted(completed)]
+        (output / "summary.json").write_text(json.dumps(records, indent=2) + "\n")
+        if workers > 1:
+            print(
+                f"Completed {len(completed)}/{len(jobs)}: {result['case']}/{result['variant']}",
+                flush=True,
+            )
+        for failure in result["failures"]:
+            print(f"QUALITY FAILURE {result['case']}/{result['variant']}: {failure}", flush=True)
+
+    if workers == 1:
+        for index, job in enumerate(jobs):
+            record(index, execute_job(job))
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            pending = {
+                executor.submit(execute_job, job, True): index
+                for index, job in enumerate(jobs)
+            }
+            for future in as_completed(pending):
+                record(pending[future], future.result())
+    return [completed[index] for index in sorted(completed)]
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
@@ -301,6 +386,10 @@ def main(argv=None):
     )
     parser.add_argument("--resolution", type=int, default=48)
     parser.add_argument("--max-cuboids", type=int, default=16)
+    parser.add_argument(
+        "--jobs", type=int, default=0,
+        help="Concurrent independent cases/ablations; 0 selects up to 4 CPUs, 1 is serial.",
+    )
     parser.add_argument(
         "--surface-max-evaluations", type=int, default=262144,
         help="Adaptive area certificate work budget for the regression corpus.",
@@ -323,6 +412,8 @@ def main(argv=None):
         help="Record unmet quality contracts without failing; runtime errors still fail.",
     )
     args = parser.parse_args(argv)
+    if args.jobs < 0:
+        parser.error("--jobs must be nonnegative (0 selects automatically)")
     if args.ply and args.point_tolerance is None:
         parser.error("--ply requires --point-tolerance in physical source units")
     if args.point_tolerance is not None and (
@@ -338,7 +429,7 @@ def main(argv=None):
     if args.case and set(args.case) - known:
         parser.error(f"Unknown cases: {', '.join(sorted(set(args.case) - known))}")
     args.output.mkdir(parents=True, exist_ok=False)
-    records = []
+    jobs = []
     for case in cases:
         if args.case and case.name not in args.case:
             continue
@@ -384,40 +475,15 @@ def main(argv=None):
                 case.mode,
                 *extra,
             ]
-            code = run_pipeline(command)
-            if code not in (0, 3):
-                raise RuntimeError(
-                    f"Benchmark execution failed: {case.name}/{variant}, exit {code}"
-                )
-            report = json.loads((output / "report.json").read_text())
-            geometry = report.get("geometry", {})
-            metrics = analytic_checks(case, output) if geometry.get("cuboids", 0) else {}
-            failures = quality_failures(case, code, report, metrics)
-            records.append(
-                dict(
-                    case=case.name,
-                    variant=variant,
-                    exit_code=code,
-                    quality_passed=not failures,
-                    failures=failures,
-                    expectation=case.expectation,
-                    physical_tolerance=case.tolerance,
-                    analytic=metrics,
-                    config=report["config"],
-                    environment=report["environment"],
-                    implementation_sha256=report["implementation_sha256"],
-                    cuboids=geometry.get("cuboids", 0),
-                    raw_coverage=geometry.get("full_cloud_proximity"),
-                    spatial_coverage=geometry.get("approximation", {}).get("spatial_coverage"),
-                    surface=geometry.get("approximation", {}).get("surface"),
-                    texture_support=report.get("texture", {}).get("supported_area_fraction"),
-                    seconds=report.get("seconds"),
-                    stages=report.get("stages"),
-                )
-            )
-            (args.output / "summary.json").write_text(json.dumps(records, indent=2) + "\n")
-            for failure in failures:
-                print(f"QUALITY FAILURE {case.name}/{variant}: {failure}", flush=True)
+            jobs.append((case, variant, command, output))
+    workers = min(len(jobs), available_cpus(), args.jobs or 4)
+    started = time.perf_counter()
+    print(f"Benchmark: {len(jobs)} jobs, {workers} concurrent", flush=True)
+    records = execute_jobs(jobs, workers, args.output)
+    (args.output / "execution.json").write_text(json.dumps({
+        "jobs": len(jobs), "workers": workers,
+        "seconds": time.perf_counter() - started,
+    }, indent=2) + "\n")
     failed = sum(not record["quality_passed"] for record in records)
     print(
         f"Quality contracts: {len(records) - failed}/{len(records)} passed"

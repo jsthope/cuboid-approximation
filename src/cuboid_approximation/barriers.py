@@ -5,6 +5,8 @@ from time import perf_counter
 import numpy as np
 from scipy.spatial import cKDTree
 
+from .parallel import current_workers
+
 
 @dataclass
 class LineConfig:
@@ -62,7 +64,7 @@ class LineConfig:
 
 def _tangents(points, radius):
     """PCA on edge candidates, not on the original full surface neighborhoods."""
-    distances, ids = cKDTree(points).query(points, k=min(24, len(points)), workers=-1)
+    distances, ids = cKDTree(points).query(points, k=min(24, len(points)), workers=current_workers())
     keep = distances <= radius
     count = keep.sum(axis=1)
     tangent = np.zeros_like(points)

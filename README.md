@@ -33,6 +33,7 @@ Replace `--ply` with XYZ, XYZ RGB or Gaussian-splat PLY data. XYZ-only inputs re
 | `--point-tolerance-factor` | `2` |
 | `--approximation-distance-factor` | `2` |
 | `--atlas-size` | `2048` |
+| `--workers` | `0` (automatic, up to 4 available CPUs) |
 | `--reconstruction-mode` | `solid` |
 | `--orientation-mode` | `pca` |
 | `--edge-barriers` | enabled |
@@ -41,6 +42,8 @@ Replace `--ply` with XYZ, XYZ RGB or Gaussian-splat PLY data. XYZ-only inputs re
 | `--diagnostics` | disabled |
 
 `python -m cuboid_approximation --help` lists all options. The lower default resolution fits ordinary isotropic objects within the default workspace budget; refinement uses continuous source coordinates, so the fitted face positions are not restricted to voxel boundaries. Higher resolutions remain available explicitly.
+
+Normal-estimation chunks and texture faces run concurrently, with ordered results and shared read-only source data. Nearest-neighbor queries use the same CPU budget, while inner BLAS operations use one thread to avoid multiplying thread pools. Set `--workers 1` for serial execution, or an explicit count to use more than the automatic four-worker limit; the count is capped by CPU affinity. Texture work in flight is bounded. Cuboid selection stays sequential because each committed box changes which candidates are admissible. Reports record the effective worker count; changing it does not invalidate compatible resume data.
 
 Final parameter NPZ, PLY and OBJ exports retain source coordinates and units. Fitting and reusable checkpoint states use normalized coordinates. The viewer normalizes before float32 conversion. GLB uses centered coordinates, +Y up and meters; use `--source-up=z` for Z-up data and `--units-per-meter 1000` for millimeters. The GLB root transform and `extras.source_origin` retain the reversible mapping to source coordinates.
 
@@ -168,6 +171,10 @@ python tools/benchmark.py --ply examples/ComfyUI_00013/input.ply \
 ```
 
 The synthetic corpus includes a cube, noisy and rotated cubes, a rotated box, L shape, hollow shell, thin appendage, close colored layers, a partial corner and components with different sampling densities. Analytic source surfaces and checks for empty space, thin details and atlas color are independent of the production union mesh. Physical tolerances stay fixed across resolutions. `--ablation` compares regions, regions without barriers and PCA. The default strict mode exits with code 1 when any quality contract fails, including exported partial results. `--exploratory` explicitly allows recording unmet contracts without failing the command; processing errors still fail. Each summary records failures, parameters, code hashes, dependencies, quality and timings. Timings are environment-dependent; geometry metrics and texture-support definitions must match before comparing runs.
+
+Independent benchmark cases and ablations run in separate processes. `--jobs 0` automatically runs up to four jobs; `--jobs N` selects a count, and `--jobs 1` runs cases sequentially. Concurrent jobs each use one pipeline worker and one native math thread to avoid oversubscription. Each job has its own log, `summary.json` stays in corpus order, and `execution.json` records total wall time and concurrency. Running several jobs also multiplies per-run memory use; reduce `--jobs` for large inputs.
+
+The parallel implementation passed 207 tests and the three strict `cube`, `rotated_cube` and `close_layers` cases. On the 13-cuboid elephant reference at a 2048 atlas, a complete texture bake from the same cached cloud decreased from **81.3 s to 41.0 s** with four workers. Atlas, confidence, OBJ and GLB bytes, geometry arrays and quality metrics were identical. This measurement includes chart completion and exports, but excludes PLY loading, normal recovery and geometric fitting. Separate indicative microbenchmarks measured normal estimation at 1.10 → 0.50 s, input loading at 1.79 → 0.98 s after reusing exact neighbor distances, and 2000 voxel-intersection queries at 1.36 → 0.78 s after vectorizing their separating axes. Three benchmark cases took 7.25 s with sequential cases versus 6.19 s with concurrent cases; process startup limits the gain on these small inputs. Conditions, repeated microbenchmarks and exact-output comparisons are recorded in [`docs/parallel-performance-validation.json`](docs/parallel-performance-validation.json).
 
 The benchmark uses an explicit area-certificate budget of 262144 evaluations by default. This allows dense reference surfaces to obtain decisive bounds without changing their physical tolerance or acceptance targets; the application default remains 65536. Both tools expose `--surface-max-evaluations`.
 

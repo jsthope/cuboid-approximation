@@ -38,6 +38,7 @@ from .checkpoint import (
     retained_population, validate_retained_population,
 )
 from .provenance import compatibility_signature, implementation_provenance
+from .parallel import current_workers, execution_workers
 
 
 class Tee:
@@ -123,6 +124,10 @@ def parser():
     )
     p.add_argument(
         "--atlas-size", type=int, default=2048, help="Square texture atlas width in pixels."
+    )
+    p.add_argument(
+        "--workers", type=int, default=0,
+        help="Parallel CPU workers; 0 selects up to four available CPUs, 1 runs serially.",
     )
     p.add_argument(
         "--point-tolerance", type=float, help="Override proximity tolerance in source units."
@@ -260,7 +265,7 @@ def prepare(source, output, args, config, previous=None):
             else:
                 scale = float(np.ptp(loaded["points"], axis=0).max())
                 local = (common["points"] - loaded["points"].min(0)) / scale
-                scores, valid, _ = normal_variation(local_geometry(local))
+                scores, valid, _ = normal_variation(local_geometry(local, workers=current_workers()))
                 mask = valid & (scores >= args.normal_angle)
             export_diagnostics(common, regions, scores, valid, mask)
             barrier_path = previous / "preparation/barriers.npz"
@@ -287,7 +292,7 @@ def prepare(source, output, args, config, previous=None):
     offset = loaded["points"].min(0)
     scale = float(np.ptp(loaded["points"], axis=0).max())
     local_points = (points - offset) / scale
-    geometry = local_geometry(local_points)
+    geometry = local_geometry(local_points, workers=current_workers())
     use_regions = args.max_frames > 1 and args.orientation_mode == "regions"
     if use_regions or diagnostics:
         scores, valid, _ = normal_variation(geometry)
@@ -513,6 +518,11 @@ def fit_prepared(loaded, regions, preparation_report, config, checkpoint, resume
 
 
 def run(args):
+    with execution_workers(getattr(args, "workers", 0)):
+        return _run(args)
+
+
+def _run(args):
     source, output = args.ply.expanduser().resolve(), args.output.expanduser().resolve()
     config = fitting_config(args)
     if not source.is_file() or source.suffix.lower() != ".ply":
@@ -568,7 +578,7 @@ def run(args):
     }
     if args.rebake is not None:
         configuration = dict(previous_report["config"])
-        for key in ("atlas_size", "source_up", "units_per_meter", "color_space"):
+        for key in ("atlas_size", "source_up", "units_per_meter", "color_space", "workers"):
             configuration[key] = getattr(args, key)
     output.mkdir(parents=True)
     state = dict(
@@ -578,6 +588,7 @@ def run(args):
         input_sha256=source_hash,
         started_utc=datetime.now(timezone.utc).isoformat(),
         config=configuration,
+        execution=dict(workers=current_workers(), blas_threads=1),
         resumed_from=str(args.resume) if args.resume else None,
         rebaked_from=str(args.rebake) if args.rebake else None,
         cuboid_config=(previous_report["cuboid_config"] if args.rebake else asdict(config)),
@@ -667,6 +678,7 @@ def run(args):
                     source_up=args.source_up,
                     units_per_meter=args.units_per_meter,
                     color_space=args.color_space,
+                    workers=current_workers(),
                 ),
             )
             if sha256(source) != source_hash:

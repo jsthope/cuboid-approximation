@@ -1,0 +1,186 @@
+{
+  "baseline_commit": "ab3cd4a6568fe43cc4a5ea34a6547fcda45e53e9",
+  "source_sha256": "5e2b58d47f57eb029568077e8629059210db78575844fa1c7905a021690fe981",
+  "environment": {
+    "python": "3.14.4",
+    "dependencies": {
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "Pillow": "12.3.0",
+      "plyfile": "1.1.5",
+      "threadpoolctl": "3.7.0"
+    }
+  },
+  "texture_full_bake": {
+    "baseline_serial": {
+      "wall_seconds": 81.32522785104811,
+      "bake_seconds": 81.25918935704976,
+      "path": "outputs/performance-reference-baseline_serial/textured"
+    },
+    "optimized_parallel": {
+      "wall_seconds": 40.98492935206741,
+      "bake_seconds": 40.9196939971298,
+      "path": "outputs/performance-reference-optimized_parallel/textured"
+    },
+    "byte_identical": {
+      "texture_atlas.png": true,
+      "projection_confidence.png": true,
+      "cuboids_textured.glb": true,
+      "cuboids_textured.obj": true,
+      "cuboids_textured.mtl": true
+    },
+    "all_texture_parameter_arrays_identical": true,
+    "quality_and_face_reports_identical": true,
+    "speedup": 1.9842715148402668,
+    "available_cpus": 6,
+    "conditions": "Cached 256167-point projection cloud; 13 fixed reference cuboids; 2048 atlas; native BLAS1 on both sides; full bake/edge completion/exports timed, PLY loading excluded; serial baseline ab3cd4a versus optimized workers4; consecutive runs on shared host."
+  },
+  "core_microbenchmarks": {
+    "measurement_type": "ad hoc microbenchmarks; wall clock; three alternating before/after repetitions; not isolated",
+    "hardware": {
+      "os_cpu_count": 6,
+      "affinity_cpus": 6
+    },
+    "source": "examples/ComfyUI_00013/input.ply",
+    "load_points": {
+      "baseline_source": "/tmp/cuboid-cloud-before.py",
+      "baseline_implementation": "HEAD cloud.py copied before edits; duplicate unique, KD build and k2 spacing query",
+      "candidate_implementation": "exact outlier-query reuse, measured before replacing workers=-1 with shared worker policy",
+      "python": "/tmp/cuboid-review-venv/bin/python",
+      "query_workers": "Both before and after workers=-1 (six available CPUs)",
+      "blas": "Environment defaults; no explicit threadpool limit in measurement script",
+      "retained_points": 256167,
+      "outliers_rejected": 0,
+      "before_seconds": [
+        2.010036622174084,
+        1.5722080061677843,
+        1.7915162949357182
+      ],
+      "after_seconds": [
+        0.9569693480152637,
+        0.9751608849037439,
+        1.0500685379374772
+      ],
+      "validation": "Every returned ndarray compared bit-exact each repetition",
+      "caveat": "Concurrent exploratory L-shape cProfile run was active; timings indicative, not isolated throughput"
+    },
+    "local_geometry": {
+      "python": "/tmp/cuboid-performance-venv/bin/python",
+      "sample": "spatial_representatives(cloud.points,60000,cloud.distinct_indices), yielding 58145 world-coordinate points",
+      "outer_context": "execution_workers(4), native BLAS limited to one thread",
+      "serial_workers": 1,
+      "parallel_workers": 4,
+      "before_seconds": [
+        1.073574255919084,
+        1.2954847610089928,
+        1.1036419249139726
+      ],
+      "after_seconds": [
+        0.5044922949746251,
+        0.5403513840865344,
+        0.4476765131112188
+      ],
+      "validation": "Every returned ndarray compared bit-exact each repetition",
+      "caveat": "Other agent work may have been active; latter portion may overlap SAT microbenchmark"
+    },
+    "sat": {
+      "python": "/tmp/cuboid-performance-venv/bin/python",
+      "baseline": "Frozen HEAD _sat_overlaps_voxels extracted using git show",
+      "candidate": "One broadcast np.cross for nine separating axes",
+      "rng_seed": 92,
+      "fixtures": "400 boxes; alternate random scipy Rotation and identity; center normal(3); dimensions uniform(.01,2,3); 25 centers per box, h=.05, epsilon=1e-10",
+      "repetition": "5 passes over 400 fixtures = 2000 calls for each implementation",
+      "blas": "Environment defaults; no explicit threadpool limit in measurement script",
+      "before_seconds": [
+        1.3831349560059607,
+        1.359612125204876,
+        1.2989936771336943
+      ],
+      "after_seconds": [
+        0.7588704358786345,
+        0.7846354069188237,
+        0.8666529299225658
+      ],
+      "validation": "400 fixture masks compared exactly before timing",
+      "caveat": "Other agent work may have been active; initial portion may overlap normal estimation microbenchmark"
+    },
+    "profile": {
+      "data": "/tmp/cuboid-geometry-profile",
+      "log": "/tmp/cuboid-geometry-profile.log",
+      "outputs": "/tmp/cuboid-geometry-profile-run32",
+      "command": "PYTHONPATH=src /tmp/cuboid-review-venv/bin/python -m cProfile -o /tmp/cuboid-geometry-profile tools/benchmark.py --exploratory --case l_shape --output /tmp/cuboid-geometry-profile-run32 --resolution 32",
+      "result": "Baseline exploratory quality failure; used solely for hotspot identification, not a successful quality regression"
+    }
+  },
+  "parallel_benchmark_cases": {
+    "serial": {
+      "jobs": 3,
+      "workers": 1,
+      "seconds": 7.247107908828184
+    },
+    "parallel": {
+      "jobs": 3,
+      "workers": 3,
+      "seconds": 6.1940855260472745
+    },
+    "cases": {
+      "cube-regions": {
+        "cuboids/parameters.npz": "all arrays exactly equal",
+        "textured/texture_parameters.npz": "all arrays exactly equal",
+        "textured/texture_atlas.png": "byte identical",
+        "textured/projection_confidence.png": "byte identical",
+        "textured/cuboids_textured.glb": "byte identical",
+        "quality_metrics": "exactly equal"
+      },
+      "rotated_cube-regions": {
+        "cuboids/parameters.npz": "all arrays exactly equal",
+        "textured/texture_parameters.npz": "all arrays exactly equal",
+        "textured/texture_atlas.png": "byte identical",
+        "textured/projection_confidence.png": "byte identical",
+        "textured/cuboids_textured.glb": "byte identical",
+        "quality_metrics": "exactly equal"
+      },
+      "close_layers-regions": {
+        "cuboids/parameters.npz": "all arrays exactly equal",
+        "textured/texture_parameters.npz": "all arrays exactly equal",
+        "textured/texture_atlas.png": "byte identical",
+        "textured/projection_confidence.png": "byte identical",
+        "textured/cuboids_textured.glb": "byte identical",
+        "quality_metrics": "exactly equal"
+      }
+    },
+    "speedup": 1.1700044951515047
+  },
+  "checks": {
+    "unit_tests_passed": 207,
+    "unit_test_runs": [
+      {
+        "tests": 204,
+        "seconds": 38.377
+      },
+      {
+        "tests": 3,
+        "seconds": 0.57
+      }
+    ],
+    "ruff": "passed",
+    "sdist_and_wheel": "passed",
+    "strict_cases": [
+      "cube",
+      "rotated_cube",
+      "close_layers"
+    ],
+    "reference_glb": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "reference_chromium_viewer": "Passed all construction prefixes, display modes and front/back/reset controls with no JavaScript or WebGL errors."
+  },
+  "limits": [
+    "Texture timing excludes PLY loading and normal recovery, using the same cached cloud on both sides. It is not an end-to-end geometric fitting speedup.",
+    "Microbenchmarks were collected under shared-machine load; per-stage timings are indicative.",
+    "Independent normal chunks, face charts and benchmark runs parallelize; immutable cuboid selection remains sequential.",
+    "Default four-worker cap controls concurrency, not total RSS. Multiple benchmark processes multiply per-run memory use.",
+    "Existing fitting and quality limitations of the real elephant and L-shape corpus remain."
+  ]
+}

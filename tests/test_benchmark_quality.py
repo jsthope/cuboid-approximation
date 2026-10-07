@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -22,6 +23,75 @@ spec.loader.exec_module(benchmark)
 
 
 class BenchmarkQualityTests(unittest.TestCase):
+    def test_parallel_jobs_overlap_and_summary_preserves_corpus_order(self):
+        first_started = threading.Event()
+        second_finished = threading.Event()
+        snapshots = []
+        write_text = Path.write_text
+
+        def write_summary(path, content):
+            result = write_text(path, content)
+            snapshots.append([record["case"] for record in json.loads(content)])
+            if snapshots[-1] == ["second"]:
+                second_finished.set()
+            return result
+
+        def execute(job, isolated=False):
+            self.assertTrue(isolated)
+            if job == "first":
+                first_started.set()
+                self.assertTrue(second_finished.wait(timeout=5))
+            else:
+                self.assertTrue(first_started.wait(timeout=5))
+            return dict(case=job, variant="regions", failures=[], quality_passed=True)
+
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            patch.object(benchmark, "execute_job", side_effect=execute),
+            patch.object(Path, "write_text", write_summary),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            records = benchmark.execute_jobs(["first", "second"], 2, Path(folder))
+            self.assertEqual([record["case"] for record in records], ["first", "second"])
+            self.assertEqual(snapshots, [["second"], ["first", "second"]])
+            self.assertEqual(json.loads((Path(folder) / "summary.json").read_text()), records)
+
+    def test_parallel_failure_is_not_suppressed(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(
+            benchmark, "execute_job", side_effect=RuntimeError("pipeline crashed")
+        ):
+            with self.assertRaisesRegex(RuntimeError, "pipeline crashed"):
+                benchmark.execute_jobs(["first", "second"], 2, Path(folder))
+
+    def test_worker_process_limits_native_threads_and_preserves_parent_environment(self):
+        def subprocess(command, *, env, stdout, stderr, check):
+            self.assertEqual(command[:3], [sys.executable, "-m", "cuboid_approximation"])
+            self.assertEqual(command[-2:], ["--workers", "1"])
+            self.assertEqual(env["OPENBLAS_NUM_THREADS"], "1")
+            self.assertEqual(env["OMP_NUM_THREADS"], "1")
+            self.assertEqual(benchmark.os.environ["OPENBLAS_NUM_THREADS"], "12")
+            stdout.write("isolated pipeline output\n")
+            return type("Result", (), {"returncode": 2})()
+
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            patch.dict(benchmark.os.environ, {"OPENBLAS_NUM_THREADS": "12"}),
+            patch.object(benchmark.subprocess, "run", side_effect=subprocess),
+        ):
+            output = Path(folder) / "cube-regions"
+            job = (next(benchmark.corpus()), "regions", ["--output", str(output)], output)
+            with self.assertRaisesRegex(RuntimeError, "exit 2; see"):
+                benchmark.execute_job(job, isolated=True)
+            self.assertEqual(output.with_suffix(".log").read_text(), "isolated pipeline output\n")
+
+    def test_negative_job_count_rejected_before_creating_output(self):
+        with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stderr(io.StringIO()):
+            output = Path(folder) / "unused"
+            with self.assertRaises(SystemExit) as error:
+                benchmark.main(["--output", str(output), "--jobs", "-1"])
+            self.assertEqual(error.exception.code, 2)
+            self.assertFalse(output.exists())
+
     def test_quality_targets_cannot_pass_with_a_partial_export(self):
         case = next(benchmark.corpus())
         report = dict(

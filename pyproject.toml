@@ -15,6 +15,7 @@ dependencies = [
     "scipy>=1.11,<2",
     "plyfile>=1.0,<2",
     "Pillow>=10,<13",
+    "threadpoolctl>=3.5,<4",
 ]
 
 [project.optional-dependencies]

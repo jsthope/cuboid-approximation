@@ -4,6 +4,8 @@ import numpy as np
 from scipy import ndimage as ndi
 from scipy.spatial import cKDTree
 
+from .parallel import current_workers
+
 from .volume import center_spacing, check_grid_memory
 
 
@@ -264,7 +266,7 @@ def surface_metrics(
             **support_report,
         )
     to_model = mesh.distances(points)
-    to_source, _ = source_tree.query(samples, workers=-1)
+    to_source, _ = source_tree.query(samples, workers=current_workers())
     weights_source = spatial_weights(points, tolerance)
     components = component_coverage(
         to_model <= tolerance, spatial_components(points, tolerance), weights_source

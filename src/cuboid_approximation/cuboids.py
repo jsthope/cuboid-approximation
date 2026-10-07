@@ -260,8 +260,11 @@ def _sat_overlaps_voxels(centers, box, h, epsilon=0.0):
         return np.zeros(0, bool)
     frame, half = box["rotation"], box["dimensions"] / 2
     delta = centers - box["center"]
-    axes = [*np.eye(3), *frame.T]
-    axes += [np.cross(a, b) for a in np.eye(3) for b in frame.T]
+    world_axes = np.eye(3)
+    # Preserve separating-axis order while avoiding nine Python/NumPy calls
+    # for every containment query during refinement.
+    cross_axes = np.cross(world_axes[:, None, :], frame.T[None, :, :]).reshape(-1, 3)
+    axes = np.concatenate((world_axes, frame.T, cross_axes))
     overlapping = np.ones(len(centers), bool)
     for axis in axes:
         length = np.linalg.norm(axis)

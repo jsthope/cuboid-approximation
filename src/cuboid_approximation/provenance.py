@@ -28,6 +28,7 @@ RUNTIME_SETTINGS = {
     "source_up",
     "units_per_meter",
     "color_space",
+    "workers",
 }
 PREPARATION_SETTINGS = {
     "max_points",
@@ -50,7 +51,10 @@ def implementation_provenance(package=None):
         },
         environment=dict(
             python=sys.version,
-            dependencies={name: version(name) for name in ("numpy", "scipy", "plyfile", "Pillow")},
+            dependencies={
+                name: version(name)
+                for name in ("numpy", "scipy", "plyfile", "Pillow", "threadpoolctl")
+            },
         ),
     )
 

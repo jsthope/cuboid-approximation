@@ -8,6 +8,8 @@ from scipy.spatial import cKDTree
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 
+from .parallel import current_workers
+
 
 @dataclass
 class SurfaceConfig:
@@ -96,7 +98,7 @@ def segment_surfaces(
         distances, neighbors = cKDTree(points[core_ids]).query(
             points[core_ids],
             k=list(range(1, min(config.neighbors + 1, len(core_ids)) + 1)),
-            workers=-1,
+            workers=current_workers(),
         )
         row = np.broadcast_to(np.arange(len(core_ids))[:, None], neighbors.shape)
         keep = np.isfinite(distances) & (neighbors != row)
